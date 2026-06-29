@@ -3,9 +3,8 @@
 import { useRef, useState } from 'react'
 import { calcularGrupo, calcularTotaisGerais } from '@/lib/calculos'
 import type { Cliente, Disciplina, GrupoOrcamento, ItemOrcamento, UnidadeMedida } from '@/types/database'
-import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
+import type { GrupoCalculado, TotaisGerais } from '@/types/orcamento'
 import CabecalhoObra from './CabecalhoObra'
-import ToggleVisao from './ToggleVisao'
 import TabelaOrcamento from './TabelaOrcamento'
 
 type GrupoComItens = GrupoOrcamento & {
@@ -34,29 +33,28 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const [grupos, setGrupos] = useState<GrupoComItens[]>(
     obra.grupos_orcamento.map(g => ({ ...g, itens_orcamento: g.itens_orcamento ?? [] }))
   )
-  const [visao, setVisao] = useState<TipoVisao>('comercial')
-  const [exportando, setExportando] = useState(false)
+  const [exportando, setExportando] = useState<'tecnico' | 'comercial' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importandoGrupoId, setImportandoGrupoId] = useState<string | null>(null)
 
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
 
-  async function exportarComercial() {
-    setExportando(true)
+  async function exportar(tipo: 'tecnico' | 'comercial') {
+    setExportando(tipo)
     try {
-      const res = await fetch(`/api/obras/${obra.id}/export`)
+      const res = await fetch(`/api/obras/${obra.id}/export?tipo=${tipo}`)
       if (!res.ok) { alert('Erro ao gerar exportação'); return }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = res.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1]
-        ?? `orcamento-${obra.codigo}.xlsx`
+        ?? `orcamento-${tipo}-${obra.codigo}.xlsx`
       a.click()
       URL.revokeObjectURL(url)
     } finally {
-      setExportando(false)
+      setExportando(null)
     }
   }
 
@@ -176,22 +174,28 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
 
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-900">Orçamento</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
-            onClick={exportarComercial}
-            disabled={exportando}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+            onClick={() => exportar('tecnico')}
+            disabled={exportando !== null}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {exportando ? 'Gerando...' : '↓ Exportar Comercial'}
+            {exportando === 'tecnico' ? 'Gerando...' : '↓ Exportar Técnico'}
           </button>
-          <ToggleVisao visao={visao} onChange={setVisao} />
+          <button
+            onClick={() => exportar('comercial')}
+            disabled={exportando !== null}
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {exportando === 'comercial' ? 'Gerando...' : '↓ Exportar Comercial'}
+          </button>
         </div>
       </div>
 
       <TabelaOrcamento
         gruposCalculados={gruposCalculados}
         totais={totais}
-        visao={visao}
+        visao="tecnica"
         obraId={obra.id}
         disciplinas={disciplinas}
         unidades={unidades}
