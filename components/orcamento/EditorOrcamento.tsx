@@ -40,6 +40,8 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
 
   async function atualizarItem(grupoId: string, itemId: string, campo: string, valor: unknown) {
+    // Snapshot before optimistic update
+    const snapshot = grupos
     // Atualização otimista
     setGrupos(prev => prev.map(g =>
       g.id !== grupoId ? g : {
@@ -49,11 +51,14 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         ),
       }
     ))
-    await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
+    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [campo]: valor }),
     })
+    if (!res.ok) {
+      setGrupos(snapshot)  // rollback
+    }
   }
 
   async function adicionarGrupo(disciplina_id: string) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import {
   Select,
   SelectContent,
@@ -39,14 +39,22 @@ function CelulaEditavel({
 }) {
   const [editando, setEditando] = useState(false)
   const [draft, setDraft] = useState('')
+  const canceladoRef = useRef(false)
 
   function abrir() {
     setDraft(String(valor))
+    canceladoRef.current = false
     setEditando(true)
   }
 
   function confirmar() {
+    if (canceladoRef.current) return
     onSave(draft)
+    setEditando(false)
+  }
+
+  function cancelar() {
+    canceladoRef.current = true
     setEditando(false)
   }
 
@@ -61,7 +69,7 @@ function CelulaEditavel({
         onBlur={confirmar}
         onKeyDown={e => {
           if (e.key === 'Enter') e.currentTarget.blur()
-          if (e.key === 'Escape') setEditando(false)
+          if (e.key === 'Escape') cancelar()
         }}
       />
     )
