@@ -37,7 +37,7 @@ export interface Obra {
   nome: string
   data_orcamento: string | null
   status: StatusObra
-  criado_por: string
+  criado_por: string | null
   criado_em: string
   atualizado_em: string
   clientes?: Cliente
