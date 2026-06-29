@@ -137,7 +137,7 @@ export default function TabelaOrcamento({
                 <Fragment key={grupo.id}>
                   <tr className="bg-gray-50 font-semibold text-gray-700">
                     <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
-                    <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
+                    <td className="px-2 py-1.5 border-b border-gray-200" />
                     <td className="px-2 py-1.5 border-b border-gray-200 uppercase">
                       {grupo.disciplinas?.nome ?? '—'}
                     </td>
@@ -317,7 +317,7 @@ export default function TabelaOrcamento({
               <Fragment key={grupo.id}>
                 <tr className="bg-gray-50 font-semibold text-gray-700">
                   <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
-                  <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
+                  <td className="px-2 py-1.5 border-b border-gray-200" />
                   <td className="px-2 py-1.5 border-b border-gray-200 uppercase">
                     {grupo.disciplinas?.nome ?? '—'}
                   </td>
