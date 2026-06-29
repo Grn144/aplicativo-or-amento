@@ -30,16 +30,77 @@ interface Props {
   unidades: Pick<UnidadeMedida, 'id' | 'sigla'>[]
 }
 
-export default function EditorOrcamento({ obra, clientes, disciplinas: _disciplinas, unidades: _unidades }: Props) {
-  const [grupos, _setGrupos] = useState<GrupoComItens[]>(
+export default function EditorOrcamento({ obra, clientes, disciplinas, unidades }: Props) {
+  const [grupos, setGrupos] = useState<GrupoComItens[]>(
     obra.grupos_orcamento.map(g => ({ ...g, itens_orcamento: g.itens_orcamento ?? [] }))
   )
   const [visao, setVisao] = useState<TipoVisao>('comercial')
 
-  // _setGrupos is preserved for Task 5 to add editing capabilities
-
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
+
+  async function atualizarItem(grupoId: string, itemId: string, campo: string, valor: unknown) {
+    // Atualização otimista
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: g.itens_orcamento.map(item =>
+          item.id !== itemId ? item : { ...item, [campo]: valor }
+        ),
+      }
+    ))
+    await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [campo]: valor }),
+    })
+  }
+
+  async function adicionarGrupo(disciplina_id: string) {
+    const res = await fetch(`/api/obras/${obra.id}/grupos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disciplina_id }),
+    })
+    if (!res.ok) return
+    const novoGrupo = await res.json()
+    setGrupos(prev => [...prev, { ...novoGrupo, itens_orcamento: novoGrupo.itens_orcamento ?? [] }])
+  }
+
+  async function removerGrupo(grupoId: string) {
+    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}`, { method: 'DELETE' })
+    if (!res.ok) return
+    setGrupos(prev => prev.filter(g => g.id !== grupoId))
+  }
+
+  async function adicionarItem(grupoId: string) {
+    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    if (!res.ok) return
+    const novoItem = await res.json()
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: [...g.itens_orcamento, novoItem],
+      }
+    ))
+  }
+
+  async function removerItem(grupoId: string, itemId: string) {
+    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
+      method: 'DELETE',
+    })
+    if (!res.ok) return
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: g.itens_orcamento.filter(item => item.id !== itemId),
+      }
+    ))
+  }
 
   return (
     <div className="p-6 space-y-4">
@@ -52,6 +113,14 @@ export default function EditorOrcamento({ obra, clientes, disciplinas: _discipli
         gruposCalculados={gruposCalculados}
         totais={totais}
         visao={visao}
+        obraId={obra.id}
+        disciplinas={disciplinas}
+        unidades={unidades}
+        onUpdateItem={atualizarItem}
+        onAddGrupo={adicionarGrupo}
+        onRemoveGrupo={removerGrupo}
+        onAddItem={adicionarItem}
+        onRemoveItem={removerItem}
       />
     </div>
   )
