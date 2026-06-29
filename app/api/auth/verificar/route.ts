@@ -48,13 +48,16 @@ export async function POST(request: NextRequest) {
   await admin.from('mfa_pendente').delete().eq('user_id', user.id)
 
   const response = NextResponse.json({ ok: true })
+  // Session cookie: some quando o browser fechar, forçando novo login
   response.cookies.set('mfa_verificado', 'true', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 8, // 8 horas
     path: '/',
+    // sem maxAge → session cookie
   })
+  // Limpa o cookie de MFA em andamento
+  response.cookies.delete('mfa_em_andamento')
 
   return response
 }

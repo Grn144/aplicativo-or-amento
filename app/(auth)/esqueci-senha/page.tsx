@@ -1,18 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
-export default function LoginPage() {
-  const router = useRouter()
+export default function EsqueciSenhaPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [enviado, setEnviado] = useState(false)
   const [erro, setErro] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
@@ -21,31 +19,52 @@ export default function LoginPage() {
     setErro('')
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email }),
       })
 
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        setErro(data.error || `Erro ao fazer login (${res.status})`)
+        setErro(data.error || 'Erro ao enviar email.')
         setLoading(false)
         return
       }
 
-      router.push('/verificar')
+      setEnviado(true)
     } catch {
       setErro('Erro de conexão. Tente novamente.')
       setLoading(false)
     }
   }
 
+  if (enviado) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Email enviado!</CardTitle>
+          <CardDescription>
+            Se o endereço <strong>{email}</strong> estiver cadastrado, você receberá um link para redefinir sua senha em instantes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/login">
+            <Button variant="outline" className="w-full">Voltar ao login</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-center">Sistema de Orçamentos</CardTitle>
+        <CardTitle>Recuperar senha</CardTitle>
+        <CardDescription>
+          Informe seu email cadastrado e enviaremos um link para redefinir sua senha.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -58,32 +77,20 @@ export default function LoginPage() {
               onChange={e => setEmail(e.target.value)}
               placeholder="seu@email.com"
               required
+              autoFocus
               autoComplete="email"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-          {erro && (
-            <p className="text-sm text-red-600">{erro}</p>
-          )}
+          {erro && <p className="text-sm text-red-600">{erro}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? 'Enviando...' : 'Enviar link de recuperação'}
           </Button>
           <div className="text-center">
             <Link
-              href="/esqueci-senha"
+              href="/login"
               className="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2"
             >
-              Esqueci minha senha
+              Voltar ao login
             </Link>
           </div>
         </form>

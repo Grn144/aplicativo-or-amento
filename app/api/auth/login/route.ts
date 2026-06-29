@@ -53,5 +53,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Erro ao enviar código por email. Verifique a configuração do Resend.' }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true })
+  const response = NextResponse.json({ ok: true })
+  // Cookie de sessão (sem maxAge) — some quando o browser fechar
+  response.cookies.set('mfa_em_andamento', 'true', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    // sem maxAge → session cookie
+  })
+  return response
 }

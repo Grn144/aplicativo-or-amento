@@ -28,25 +28,41 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
-  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/verificar')
-  const mfaVerificado = request.cookies.get('mfa_verificado')?.value === 'true'
+  const isAuthPage =
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/verificar') ||
+    pathname.startsWith('/esqueci-senha') ||
+    pathname.startsWith('/nova-senha')
 
-  // Sem sessão → login
+  const mfaVerificado = request.cookies.get('mfa_verificado')?.value === 'true'
+  // Cookie de sessão setado após login, antes de completar o MFA
+  const mfaEmAndamento = request.cookies.get('mfa_em_andamento')?.value === 'true'
+
+  // Sem sessão Supabase → login
   if (!user && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Com sessão mas MFA pendente → verificar
-  if (user && !mfaVerificado && pathname !== '/verificar' && !pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/verificar', request.url))
+  // Tem sessão Supabase mas sem mfa_verificado
+  if (user && !mfaVerificado && !isAuthPage) {
+    // Permitir apenas se o MFA estiver em andamento e estiver indo para /verificar
+    if (mfaEmAndamento && pathname === '/verificar') {
+      return supabaseResponse
+    }
+    // Caso contrário: sessão antiga (browser reaberto) → deslogar e ir para login
+    await supabase.auth.signOut()
+    const res = NextResponse.redirect(new URL('/login', request.url))
+    res.cookies.delete('mfa_em_andamento')
+    res.cookies.delete('mfa_verificado')
+    return res
   }
 
-  // Já autenticado com MFA → redireciona para obras
+  // Já autenticado com MFA → não precisa de páginas de auth
   if (user && mfaVerificado && isAuthPage) {
     return NextResponse.redirect(new URL('/obras', request.url))
   }
 
-  // Redireciona raiz para obras ou login
+  // Raiz
   if (pathname === '/') {
     return NextResponse.redirect(
       new URL(user && mfaVerificado ? '/obras' : '/login', request.url)
