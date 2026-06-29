@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST() {
   const supabase = await createClient()
-  await supabase.auth.signOut()
+  try { await supabase.auth.signOut() } catch { /* falha no signOut não impede limpeza do cookie */ }
 
   const response = NextResponse.redirect(
     new URL('/login', process.env.NEXT_PUBLIC_APP_URL!)

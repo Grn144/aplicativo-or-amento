@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Código expirado. Faça login novamente.' }, { status: 400 })
   }
 
-  if (mfa.codigo !== codigo.trim()) {
+  if (typeof codigo !== 'string' || mfa.codigo !== codigo.trim()) {
     return NextResponse.json({ error: 'Código incorreto' }, { status: 400 })
   }
 
