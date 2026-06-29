@@ -29,8 +29,10 @@ export async function GET(
     .eq('id', id)
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!data) return NextResponse.json({ error: 'Obra não encontrada' }, { status: 404 })
+  if (error) {
+    if (error.code === 'PGRST116') return NextResponse.json({ error: 'Obra não encontrada' }, { status: 404 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
 
   // Ordenar grupos e itens
   if (data.grupos_orcamento) {
@@ -68,7 +70,10 @@ export async function PUT(
     .select('*, clientes(id, razao_social)')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    if (error.code === 'PGRST116') return NextResponse.json({ error: 'Obra não encontrada' }, { status: 404 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   return NextResponse.json(data)
 }
 
