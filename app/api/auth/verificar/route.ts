@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   const admin = await createAdminClient()
   const { data: mfa } = await admin
     .from('mfa_pendente')
-    .select('codigo, expires_at')
+    .select('codigo, expires_at, tentativas')
     .eq('user_id', user.id)
     .single()
 
@@ -26,11 +26,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Código não encontrado. Faça login novamente.' }, { status: 400 })
   }
 
+  if ((mfa.tentativas ?? 0) >= 5) {
+    await admin.from('mfa_pendente').delete().eq('user_id', user.id)
+    return NextResponse.json({ error: 'Muitas tentativas incorretas. Faça login novamente.' }, { status: 400 })
+  }
+
   if (new Date(mfa.expires_at) < new Date()) {
     return NextResponse.json({ error: 'Código expirado. Faça login novamente.' }, { status: 400 })
   }
 
   if (typeof codigo !== 'string' || mfa.codigo !== codigo.trim()) {
+    await admin.from('mfa_pendente').update({ tentativas: (mfa.tentativas ?? 0) + 1 }).eq('user_id', user.id)
     return NextResponse.json({ error: 'Código incorreto' }, { status: 400 })
   }
 

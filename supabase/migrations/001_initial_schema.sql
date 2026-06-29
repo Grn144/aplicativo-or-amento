@@ -96,6 +96,7 @@ CREATE TABLE mfa_pendente (
   user_id    uuid REFERENCES auth.users ON DELETE CASCADE,
   codigo     text NOT NULL,
   expires_at timestamptz NOT NULL,
+  tentativas integer NOT NULL DEFAULT 0,
   UNIQUE (user_id)
 );
 
