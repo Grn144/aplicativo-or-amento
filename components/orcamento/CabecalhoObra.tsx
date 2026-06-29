@@ -109,8 +109,9 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
           <Select
             value={campos.status}
             onValueChange={v => {
-              setCampos(p => ({ ...p, status: (v ?? 'rascunho') as StatusObra }))
-              salvar('status', v)
+              const novo = (v ?? campos.status) as StatusObra
+              setCampos(p => ({ ...p, status: novo }))
+              salvar('status', novo)
             }}
           >
             <SelectTrigger>
