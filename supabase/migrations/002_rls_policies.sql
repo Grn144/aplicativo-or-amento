@@ -13,7 +13,7 @@ ALTER TABLE mfa_pendente       ENABLE ROW LEVEL SECURITY;
 -- Helper: retorna papel do usuário autenticado
 CREATE OR REPLACE FUNCTION get_user_papel()
 RETURNS text AS $$
-  SELECT papel FROM usuarios WHERE id = auth.uid()
+  SELECT COALESCE(papel, 'none') FROM usuarios WHERE id = auth.uid()
 $$ LANGUAGE sql SECURITY DEFINER;
 
 -- Clientes

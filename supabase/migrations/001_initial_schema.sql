@@ -45,7 +45,7 @@ CREATE TABLE obras (
   status         text NOT NULL DEFAULT 'rascunho'
                  CHECK (status IN ('rascunho','enviado','aprovado',
                                    'em_execucao','concluido','cancelado')),
-  criado_por     uuid REFERENCES usuarios,
+  criado_por     uuid REFERENCES usuarios ON DELETE SET NULL,
   criado_em      timestamptz DEFAULT now(),
   atualizado_em  timestamptz DEFAULT now()
 );
