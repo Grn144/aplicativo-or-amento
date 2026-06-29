@@ -24,6 +24,7 @@ interface Props {
   onRemoveGrupo: (grupoId: string) => Promise<void>
   onAddItem: (grupoId: string) => Promise<void>
   onRemoveItem: (grupoId: string, itemId: string) => Promise<void>
+  onImportItens: (grupoId: string) => void
 }
 
 function CelulaEditavel({
@@ -97,6 +98,7 @@ export default function TabelaOrcamento({
   onRemoveGrupo,
   onAddItem,
   onRemoveItem,
+  onImportItens,
 }: Props) {
   const [adicionandoGrupo, setAdicionandoGrupo] = useState(false)
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState('')
@@ -225,12 +227,20 @@ export default function TabelaOrcamento({
                   ))}
                   <tr>
                     <td colSpan={colsComercial + 1} className="px-2 py-1 border-b border-gray-100">
-                      <button
-                        onClick={() => onAddItem(grupo.id)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                      >
-                        + Adicionar item
-                      </button>
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => onAddItem(grupo.id)}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          + Adicionar item
+                        </button>
+                        <button
+                          onClick={() => onImportItens(grupo.id)}
+                          className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
+                        >
+                          ↑ Importar planilha
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </Fragment>
@@ -432,12 +442,20 @@ export default function TabelaOrcamento({
                 ))}
                 <tr>
                   <td colSpan={colsTecnica + 1} className="px-2 py-1 border-b border-gray-100">
-                    <button
-                      onClick={() => onAddItem(grupo.id)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                    >
-                      + Adicionar item
-                    </button>
+                    <div className="flex items-center gap-4">
+                      <button
+                        onClick={() => onAddItem(grupo.id)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        + Adicionar item
+                      </button>
+                      <button
+                        onClick={() => onImportItens(grupo.id)}
+                        className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
+                      >
+                        ↑ Importar planilha
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </Fragment>
