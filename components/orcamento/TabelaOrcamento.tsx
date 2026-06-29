@@ -1,5 +1,6 @@
 'use client'
 
+import { Fragment } from 'react'
 import { fmt, fmtPct } from '@/lib/format'
 import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
 
@@ -31,9 +32,9 @@ export default function TabelaOrcamento({ gruposCalculados, totais, visao }: Pro
           </thead>
           <tbody>
             {gruposCalculados.map(grupo => (
-              <>
+              <Fragment key={grupo.id}>
                 {/* Linha de grupo */}
-                <tr key={`grupo-${grupo.id}`} className="bg-gray-50 font-semibold text-gray-700">
+                <tr className="bg-gray-50 font-semibold text-gray-700">
                   <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
                   <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
                   <td className="px-2 py-1.5 border-b border-gray-200 uppercase text-xs">
@@ -68,7 +69,7 @@ export default function TabelaOrcamento({ gruposCalculados, totais, visao }: Pro
                     <td className="px-2 py-1.5 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
           </tbody>
           <tfoot className="bg-gray-800 text-white font-semibold">
@@ -108,8 +109,8 @@ export default function TabelaOrcamento({ gruposCalculados, totais, visao }: Pro
         </thead>
         <tbody>
           {gruposCalculados.map(grupo => (
-            <>
-              <tr key={`grupo-${grupo.id}`} className="bg-gray-50 font-semibold text-gray-700">
+            <Fragment key={grupo.id}>
+              <tr className="bg-gray-50 font-semibold text-gray-700">
                 <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
                 <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
                 <td className="px-2 py-1.5 border-b border-gray-200 uppercase text-xs">
@@ -148,7 +149,7 @@ export default function TabelaOrcamento({ gruposCalculados, totais, visao }: Pro
                   <td className="px-2 py-1.5 text-right font-mono">{fmtPct(item.margem_efetiva_pct)}</td>
                 </tr>
               ))}
-            </>
+            </Fragment>
           ))}
         </tbody>
         <tfoot className="bg-gray-800 text-white font-semibold">

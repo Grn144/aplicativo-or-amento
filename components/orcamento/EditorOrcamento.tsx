@@ -31,13 +31,12 @@ interface Props {
 }
 
 export default function EditorOrcamento({ obra, clientes, disciplinas: _disciplinas, unidades: _unidades }: Props) {
-  const [grupos, setGrupos] = useState<GrupoComItens[]>(
+  const [grupos, _setGrupos] = useState<GrupoComItens[]>(
     obra.grupos_orcamento.map(g => ({ ...g, itens_orcamento: g.itens_orcamento ?? [] }))
   )
   const [visao, setVisao] = useState<TipoVisao>('comercial')
 
-  // setGrupos is preserved for Task 5 to add editing capabilities
-  void setGrupos
+  // _setGrupos is preserved for Task 5 to add editing capabilities
 
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
