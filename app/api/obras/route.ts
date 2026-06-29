@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const busca = searchParams.get('busca') ?? ''
+  const buscaSanitizada = busca.replace(/[(),]/g, '')
   const status = searchParams.get('status') ?? ''
 
   let query = supabase
@@ -26,8 +27,8 @@ export async function GET(request: NextRequest) {
     .limit(100)
 
   if (status) query = query.eq('status', status)
-  if (busca) {
-    query = query.or(`codigo.ilike.%${busca}%,nome.ilike.%${busca}%`)
+  if (buscaSanitizada) {
+    query = query.or(`codigo.ilike.%${buscaSanitizada}%,nome.ilike.%${buscaSanitizada}%`)
   }
 
   const { data, error } = await query

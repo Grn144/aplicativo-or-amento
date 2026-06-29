@@ -24,6 +24,11 @@ export async function PUT(
     if (campo in body) updates[campo] = body[campo]
   }
 
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'Nenhum campo enviado' }, { status: 400 })
+  }
+  updates.atualizado_em = new Date().toISOString()
+
   const { data, error } = await supabase
     .from('itens_orcamento')
     .update(updates)

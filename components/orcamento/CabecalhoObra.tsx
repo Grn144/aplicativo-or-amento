@@ -45,10 +45,13 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
   })
 
   async function salvar(campo: string, valor: string | null) {
+    const camposObrigatorios = ['codigo', 'nome']
+    const valorFinal = typeof valor === 'string' ? valor.trim() || null : valor
+    if (camposObrigatorios.includes(campo) && !valorFinal) return
     await fetch(`/api/obras/${obra.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ [campo]: valor || null }),
+      body: JSON.stringify({ [campo]: valorFinal }),
     })
   }
 

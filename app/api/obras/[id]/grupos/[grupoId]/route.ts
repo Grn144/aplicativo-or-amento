@@ -15,6 +15,10 @@ export async function PUT(
   const updates: Record<string, unknown> = {}
   if ('disciplina_id' in body) updates.disciplina_id = body.disciplina_id
 
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: 'Nenhum campo enviado' }, { status: 400 })
+  }
+
   const { data, error } = await supabase
     .from('grupos_orcamento')
     .update(updates)

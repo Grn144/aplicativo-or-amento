@@ -69,7 +69,11 @@ export default async function ObraPage({
     supabase.from('unidades_medida').select('id, sigla').order('sigla'),
   ])
 
-  if (obraResult.error || !obraResult.data) notFound()
+  if (obraResult.error) {
+    if (obraResult.error.code === 'PGRST116') notFound()
+    throw new Error(obraResult.error.message)
+  }
+  if (!obraResult.data) notFound()
 
   const obra = obraResult.data as unknown as ObraCompleta
 
