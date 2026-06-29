@@ -9,18 +9,22 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+
+  console.log('[verificar] user:', user?.id ?? null, 'error:', userError?.message ?? null)
 
   if (!user) {
-    return NextResponse.json({ error: 'Sessão expirada' }, { status: 401 })
+    return NextResponse.json({ error: 'Sessão expirada. Faça login novamente.' }, { status: 401 })
   }
 
   const admin = await createAdminClient()
-  const { data: mfa } = await admin
+  const { data: mfa, error: mfaError } = await admin
     .from('mfa_pendente')
     .select('codigo, expires_at, tentativas')
     .eq('user_id', user.id)
     .single()
+
+  console.log('[verificar] mfa:', mfa ? 'encontrado' : 'não encontrado', 'error:', mfaError?.message ?? null)
 
   if (!mfa) {
     return NextResponse.json({ error: 'Código não encontrado. Faça login novamente.' }, { status: 400 })

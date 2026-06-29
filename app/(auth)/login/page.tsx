@@ -19,21 +19,26 @@ export default function LoginPage() {
     setLoading(true)
     setErro('')
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
-    if (!res.ok) {
-      setErro(data.error || 'Erro ao fazer login')
+      if (!res.ok) {
+        setErro(data.error || `Erro ao fazer login (${res.status})`)
+        setLoading(false)
+        return
+      }
+
+      router.push('/verificar')
+    } catch {
+      setErro('Erro de conexão. Tente novamente.')
       setLoading(false)
-      return
     }
-
-    router.push('/verificar')
   }
 
   return (

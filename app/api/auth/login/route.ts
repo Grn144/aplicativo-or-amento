@@ -29,12 +29,15 @@ export async function POST(request: NextRequest) {
 
   // Gravar código no banco (upsert — substitui qualquer código anterior)
   const admin = await createAdminClient()
-  await admin
+  const { error: upsertError } = await admin
     .from('mfa_pendente')
     .upsert({ user_id: userId, codigo, expires_at: expiresAt }, { onConflict: 'user_id' })
 
+  console.log('[login] upsert mfa_pendente:', upsertError ? `ERRO: ${upsertError.message}` : 'ok')
+  console.log('[login] RESEND_API_KEY presente:', !!process.env.RESEND_API_KEY)
+
   // Enviar email com o código
-  await resend.emails.send({
+  const { error: emailError } = await resend.emails.send({
     from: 'Sistema de Orçamentos <onboarding@resend.dev>',
     to: email,
     subject: 'Código de verificação',
@@ -44,6 +47,11 @@ export async function POST(request: NextRequest) {
       <p>Válido por 10 minutos.</p>
     `,
   })
+
+  if (emailError) {
+    console.error('Erro ao enviar email MFA:', emailError)
+    return NextResponse.json({ error: 'Erro ao enviar código por email. Verifique a configuração do Resend.' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -18,22 +18,27 @@ export default function VerificarPage() {
     setLoading(true)
     setErro('')
 
-    const res = await fetch('/api/auth/verificar', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ codigo }),
-    })
+    try {
+      const res = await fetch('/api/auth/verificar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo }),
+      })
 
-    const data = await res.json()
+      const data = await res.json().catch(() => ({}))
 
-    if (!res.ok) {
-      setErro(data.error || 'Erro ao verificar código')
+      if (!res.ok) {
+        setErro(data.error || `Erro ao verificar código (${res.status})`)
+        setLoading(false)
+        return
+      }
+
+      router.push('/obras')
+      router.refresh()
+    } catch {
+      setErro('Erro de conexão. Tente novamente.')
       setLoading(false)
-      return
     }
-
-    router.push('/obras')
-    router.refresh()
   }
 
   async function handleReenviar() {

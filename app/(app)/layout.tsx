@@ -29,20 +29,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           >
             Obras
           </Link>
-          <Link
-            href="/dashboard"
-            className="flex items-center px-3 py-2 text-sm rounded hover:bg-gray-700 transition-colors"
-          >
-            Dashboard
-          </Link>
-          {(usuario?.papel === 'admin' || usuario?.papel === 'engenheiro' || usuario?.papel === 'orcamentista') && (
-            <Link
-              href="/admin/disciplinas"
-              className="flex items-center px-3 py-2 text-sm rounded hover:bg-gray-700 transition-colors"
-            >
-              Cadastros
-            </Link>
-          )}
         </nav>
         <div className="p-2 border-t border-gray-700">
           <form action="/api/auth/logout" method="POST">
