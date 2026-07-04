@@ -34,13 +34,15 @@ export function LoginForm() {
 
   function validarEmail(valor: string): string {
     if (!valor.trim()) return 'Informe seu e-mail.'
-    if (!REGEX_EMAIL.test(valor)) return 'E-mail inválido.'
+    if (!REGEX_EMAIL.test(valor.trim())) return 'E-mail inválido.'
     return ''
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const msgEmail = validarEmail(email)
+    if (status !== 'idle') return
+    const emailLimpo = email.trim()
+    const msgEmail = validarEmail(emailLimpo)
     const msgSenha = senha ? '' : 'Informe sua senha.'
     setErroEmail(msgEmail)
     setErroSenha(msgSenha)
@@ -52,7 +54,7 @@ export function LoginForm() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: senha }),
+        body: JSON.stringify({ email: emailLimpo, password: senha }),
       })
       const data = await res.json().catch(() => ({}))
 
@@ -62,8 +64,12 @@ export function LoginForm() {
         return
       }
 
-      if (lembrar) localStorage.setItem(CHAVE_EMAIL_SALVO, email)
-      else localStorage.removeItem(CHAVE_EMAIL_SALVO)
+      try {
+        if (lembrar) localStorage.setItem(CHAVE_EMAIL_SALVO, emailLimpo)
+        else localStorage.removeItem(CHAVE_EMAIL_SALVO)
+      } catch {
+        // armazenamento indisponível — segue sem lembrar
+      }
 
       setStatus('sucesso')
       router.push('/verificar')

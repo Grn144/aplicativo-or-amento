@@ -21,6 +21,7 @@ function submeter() {
 
 describe('LoginForm', () => {
   beforeEach(() => {
+    vi.unstubAllGlobals()
     vi.restoreAllMocks()
     push.mockClear()
     localStorage.clear()
