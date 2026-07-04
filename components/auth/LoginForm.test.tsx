@@ -99,4 +99,29 @@ describe('LoginForm', () => {
     expect(screen.getByPlaceholderText('Digite seu e-mail')).toHaveValue('salvo@empresa.com')
     expect(screen.getByRole('checkbox', { name: 'Lembrar-me' })).toBeChecked()
   })
+
+  it('lembrar-me desmarcado remove o e-mail salvo no sucesso', async () => {
+    localStorage.setItem('login:email', 'salvo@empresa.com')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }))
+    )
+    render(<LoginForm />)
+    expect(screen.getByRole('checkbox', { name: 'Lembrar-me' })).toBeChecked()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Lembrar-me' }))
+    preencher('salvo@empresa.com', 'segredo123')
+    submeter()
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/verificar'))
+    expect(localStorage.getItem('login:email')).toBeNull()
+  })
+
+  it('erro de conexão mostra mensagem amigável', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('failed')))
+    render(<LoginForm />)
+    preencher('eng@empresa.com', 'segredo123')
+    submeter()
+    expect(await screen.findByText('Erro de conexão. Tente novamente.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Entrar' })).toBeEnabled()
+    expect(push).not.toHaveBeenCalled()
+  })
 })
