@@ -1,93 +1,11 @@
-'use client'
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { LogoEmpresa } from '@/components/auth/LogoEmpresa'
+import { LoginForm } from '@/components/auth/LoginForm'
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [erro, setErro] = useState('')
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setErro('')
-
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
-        setErro(data.error || `Erro ao fazer login (${res.status})`)
-        setLoading(false)
-        return
-      }
-
-      router.push('/verificar')
-    } catch {
-      setErro('Erro de conexão. Tente novamente.')
-      setLoading(false)
-    }
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-center">Sistema de Orçamentos</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="seu@email.com"
-              required
-              autoComplete="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-          {erro && (
-            <p className="text-sm text-red-600">{erro}</p>
-          )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
-          </Button>
-          <div className="text-center">
-            <Link
-              href="/esqueci-senha"
-              className="text-sm text-gray-500 hover:text-gray-700 underline underline-offset-2"
-            >
-              Esqueci minha senha
-            </Link>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <div className="animate-in fade-in slide-in-from-bottom-4 rounded-2xl bg-white p-8 shadow-2xl shadow-slate-950/40 duration-500 sm:p-10">
+      <LogoEmpresa />
+      <LoginForm />
+    </div>
   )
 }
