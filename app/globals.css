@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* dark: não se aplica dentro de .tema-claro-fixo (telas de auth são sempre claras) */
+@custom-variant dark (&:is(.dark *):not(.tema-claro-fixo *));
 
 @theme inline {
   --color-background: var(--background);
@@ -126,6 +127,11 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* o color herdado do body já resolveu com os tokens do tema global;
+     re-resolve aqui para que a subárvore de auth use os tokens claros */
+  .tema-claro-fixo {
+    color: var(--foreground);
   }
   html {
     @apply font-sans;
