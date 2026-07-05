@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { verificarRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   const { codigo } = await request.json()
@@ -15,6 +16,15 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: 'Sessão expirada. Faça login novamente.' }, { status: 401 })
+  }
+
+  // Impede contornar o limite de 5 tentativas do código reiniciando o login
+  const permitido = await verificarRateLimit(`verificar:${user.id}`, 10)
+  if (!permitido) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Aguarde 15 minutos e tente novamente.' },
+      { status: 429 }
+    )
   }
 
   const admin = await createAdminClient()

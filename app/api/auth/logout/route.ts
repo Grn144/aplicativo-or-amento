@@ -9,5 +9,6 @@ export async function POST() {
     new URL('/login', process.env.NEXT_PUBLIC_APP_URL!)
   )
   response.cookies.delete('mfa_verificado')
+  response.cookies.delete('mfa_em_andamento')
   return response
 }

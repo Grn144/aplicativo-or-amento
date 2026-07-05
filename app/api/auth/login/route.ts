@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomInt } from 'crypto'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { verificarRateLimit } from '@/lib/rate-limit'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -14,6 +15,14 @@ export async function POST(request: NextRequest) {
 
   if (!email || !password) {
     return NextResponse.json({ error: 'Email e senha obrigatórios' }, { status: 400 })
+  }
+
+  const permitido = await verificarRateLimit(`login:${String(email).toLowerCase().trim()}`, 5)
+  if (!permitido) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Aguarde 15 minutos e tente novamente.' },
+      { status: 429 }
+    )
   }
 
   const supabase = await createClient()
@@ -49,7 +58,8 @@ export async function POST(request: NextRequest) {
   })
 
   if (emailError) {
-    console.error('Erro ao enviar email MFA:', emailError)
+    // Logar só a mensagem: o objeto completo do Resend pode conter o email do usuário (LGPD)
+    console.error('Erro ao enviar email MFA:', emailError.message ?? emailError.name)
     return NextResponse.json({ error: 'Erro ao enviar código por email. Verifique a configuração do Resend.' }, { status: 500 })
   }
 

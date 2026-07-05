@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { verificarRateLimit } from '@/lib/rate-limit'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -9,6 +10,14 @@ export async function POST(request: NextRequest) {
 
   if (!email) {
     return NextResponse.json({ error: 'Email obrigatório' }, { status: 400 })
+  }
+
+  const permitido = await verificarRateLimit(`reset:${String(email).toLowerCase().trim()}`, 5)
+  if (!permitido) {
+    return NextResponse.json(
+      { error: 'Muitas tentativas. Aguarde 15 minutos e tente novamente.' },
+      { status: 429 }
+    )
   }
 
   // O SMTP embutido do Supabase não entrega de forma confiável (limitado a dev),
@@ -48,7 +57,8 @@ export async function POST(request: NextRequest) {
   })
 
   if (emailError) {
-    console.error('[reset-password] erro no Resend:', emailError)
+    // Logar só a mensagem: o objeto completo do Resend pode conter o email do usuário (LGPD)
+    console.error('[reset-password] erro no Resend:', emailError.message ?? emailError.name)
     return NextResponse.json({ error: 'Erro ao enviar email de recuperação.' }, { status: 500 })
   }
 
