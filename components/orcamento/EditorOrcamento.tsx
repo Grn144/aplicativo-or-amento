@@ -173,7 +173,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
       <CabecalhoObra obra={obra} clientes={clientes} />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">Orçamento</h2>
+        <h2 className="text-base font-semibold">Orçamento</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => exportar('tecnico')}

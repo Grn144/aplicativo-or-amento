@@ -56,10 +56,10 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
+    <div className="bg-card rounded-lg border border-border p-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="space-y-1">
-          <Label className="text-xs text-gray-500">Código</Label>
+          <Label className="text-xs text-muted-foreground">Código</Label>
           <Input
             value={campos.codigo}
             onChange={e => setCampos(p => ({ ...p, codigo: e.target.value }))}
@@ -68,7 +68,7 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
           />
         </div>
         <div className="col-span-2 space-y-1">
-          <Label className="text-xs text-gray-500">Nome da obra</Label>
+          <Label className="text-xs text-muted-foreground">Nome da obra</Label>
           <Input
             value={campos.nome}
             onChange={e => setCampos(p => ({ ...p, nome: e.target.value }))}
@@ -76,7 +76,7 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-gray-500">Cliente</Label>
+          <Label className="text-xs text-muted-foreground">Cliente</Label>
           <Select
             value={campos.cliente_id}
             onValueChange={v => {
@@ -96,7 +96,7 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-gray-500">Data do orçamento</Label>
+          <Label className="text-xs text-muted-foreground">Data do orçamento</Label>
           <Input
             type="date"
             value={campos.data_orcamento}
@@ -105,7 +105,7 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-gray-500">Status</Label>
+          <Label className="text-xs text-muted-foreground">Status</Label>
           <Select
             value={campos.status}
             onValueChange={v => {

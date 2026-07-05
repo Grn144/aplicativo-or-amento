@@ -65,7 +65,7 @@ function CelulaEditavel({
         type={tipo}
         value={draft}
         autoFocus
-        className={`w-full border border-blue-400 rounded px-1 py-0 text-xs bg-white ${tipo === 'number' ? 'text-right' : ''} ${className ?? ''}`}
+        className={`w-full border border-ring rounded px-1 py-0 text-xs bg-background ${tipo === 'number' ? 'text-right' : ''} ${className ?? ''}`}
         onChange={e => setDraft(e.target.value)}
         onBlur={confirmar}
         onKeyDown={e => {
@@ -79,7 +79,7 @@ function CelulaEditavel({
   return (
     <div
       onDoubleClick={abrir}
-      className={`cursor-default hover:bg-blue-50 rounded px-1 select-none ${className ?? ''}`}
+      className={`cursor-default hover:bg-muted/50 rounded px-1 select-none ${className ?? ''}`}
       title="Duplo clique para editar"
     >
       {tipo === 'number' ? fmt(Number(valor)) : String(valor || '—')}
@@ -116,44 +116,44 @@ export default function TabelaOrcamento({
   if (visao === 'comercial') {
     return (
       <div className="space-y-2">
-        <div className="overflow-x-auto rounded border border-gray-200">
+        <div className="overflow-x-auto rounded border border-border">
           <table className="w-full text-xs border-collapse">
-            <thead className="bg-gray-100 text-gray-600">
+            <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-10">Item</th>
-                <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-8">Nº</th>
-                <th className="px-2 py-2 text-left font-medium border-b border-gray-200">Descrição</th>
-                <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-32">Local</th>
-                <th className="px-2 py-2 text-center font-medium border-b border-gray-200 w-16">UN</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-16">QT</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-24">P. Unit. MO</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-24">P. Unit. Mat.</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-24">Sub. MO</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-24">Sub. Mat.</th>
-                <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-24">Total</th>
-                <th className="px-2 py-2 border-b border-gray-200 w-8" />
+                <th className="px-2 py-2 text-left font-medium border-b border-border w-10">Item</th>
+                <th className="px-2 py-2 text-left font-medium border-b border-border w-8">Nº</th>
+                <th className="px-2 py-2 text-left font-medium border-b border-border">Descrição</th>
+                <th className="px-2 py-2 text-left font-medium border-b border-border w-32">Local</th>
+                <th className="px-2 py-2 text-center font-medium border-b border-border w-16">UN</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-16">QT</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-24">P. Unit. MO</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-24">P. Unit. Mat.</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-24">Sub. MO</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-24">Sub. Mat.</th>
+                <th className="px-2 py-2 text-right font-medium border-b border-border w-24">Total</th>
+                <th className="px-2 py-2 border-b border-border w-8" />
               </tr>
             </thead>
             <tbody>
               {gruposCalculados.map(grupo => (
                 <Fragment key={grupo.id}>
-                  <tr className="bg-gray-50 font-semibold text-gray-700">
-                    <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
-                    <td className="px-2 py-1.5 border-b border-gray-200" />
-                    <td className="px-2 py-1.5 border-b border-gray-200 uppercase">
+                  <tr className="bg-muted/50 font-semibold text-muted-foreground">
+                    <td className="px-2 py-1.5 border-b border-border">{grupo.letra}</td>
+                    <td className="px-2 py-1.5 border-b border-border" />
+                    <td className="px-2 py-1.5 border-b border-border uppercase">
                       {grupo.disciplinas?.nome ?? '—'}
                     </td>
-                    <td colSpan={5} className="border-b border-gray-200" />
-                    <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                    <td colSpan={5} className="border-b border-border" />
+                    <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                       {fmt(grupo.totais.subtotal_mao_obra_venda)}
                     </td>
-                    <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                    <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                       {fmt(grupo.totais.subtotal_material_venda)}
                     </td>
-                    <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                    <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                       {fmt(grupo.totais.total_venda)}
                     </td>
-                    <td className="px-2 py-1.5 border-b border-gray-200 text-center">
+                    <td className="px-2 py-1.5 border-b border-border text-center">
                       <button
                         onClick={() => onRemoveGrupo(grupo.id)}
                         className="text-red-400 hover:text-red-600 font-bold"
@@ -164,9 +164,9 @@ export default function TabelaOrcamento({
                     </td>
                   </tr>
                   {grupo.itens_calculados.map(item => (
-                    <tr key={item.id} className="hover:bg-blue-50 border-b border-gray-100">
-                      <td className="px-2 py-1 text-gray-400">{grupo.letra}</td>
-                      <td className="px-2 py-1 text-gray-500">{item.numero}</td>
+                    <tr key={item.id} className="hover:bg-muted/50 border-b border-border/50">
+                      <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
+                      <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
                       <td className="px-2 py-1">
                         <CelulaEditavel
                           valor={item.descricao}
@@ -205,10 +205,10 @@ export default function TabelaOrcamento({
                           onSave={v => onUpdateItem(grupo.id, item.id, 'quantidade', parseFloat(v) || 0)}
                         />
                       </td>
-                      <td className="px-2 py-1 text-right font-mono text-gray-500">
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
                         {fmt(item.preco_unit_mao_obra_venda)}
                       </td>
-                      <td className="px-2 py-1 text-right font-mono text-gray-500">
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
                         {fmt(item.preco_unit_material_venda)}
                       </td>
                       <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
@@ -226,11 +226,11 @@ export default function TabelaOrcamento({
                     </tr>
                   ))}
                   <tr>
-                    <td colSpan={colsComercial + 1} className="px-2 py-1 border-b border-gray-100">
+                    <td colSpan={colsComercial + 1} className="px-2 py-1 border-b border-border/50">
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => onAddItem(grupo.id)}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                         >
                           + Adicionar item
                         </button>
@@ -246,7 +246,7 @@ export default function TabelaOrcamento({
                 </Fragment>
               ))}
             </tbody>
-            <tfoot className="bg-gray-800 text-white font-semibold">
+            <tfoot className="bg-muted text-white font-semibold">
               <tr>
                 <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
                 <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_mao_obra_venda)}</td>
@@ -280,7 +280,7 @@ export default function TabelaOrcamento({
               </button>
               <button
                 onClick={() => { setAdicionandoGrupo(false); setDisciplinaSelecionada('') }}
-                className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                className="text-sm px-3 py-1 bg-muted text-muted-foreground rounded hover:bg-muted"
               >
                 Cancelar
               </button>
@@ -288,7 +288,7 @@ export default function TabelaOrcamento({
           ) : (
             <button
               onClick={() => setAdicionandoGrupo(true)}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
             >
               + Adicionar grupo
             </button>
@@ -301,49 +301,49 @@ export default function TabelaOrcamento({
   // Visão Técnica
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded border border-gray-200">
+      <div className="overflow-x-auto rounded border border-border">
         <table className="w-full text-xs border-collapse">
-          <thead className="bg-gray-100 text-gray-600">
+          <thead className="bg-muted text-muted-foreground">
             <tr>
-              <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-10">Item</th>
-              <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-8">Nº</th>
-              <th className="px-2 py-2 text-left font-medium border-b border-gray-200">Descrição</th>
-              <th className="px-2 py-2 text-left font-medium border-b border-gray-200 w-28">Local</th>
-              <th className="px-2 py-2 text-center font-medium border-b border-gray-200 w-16">UN</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-16">QT</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-22">Custo MO</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-22">Custo Mat.</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-22">Total Custo</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-16">Mg. MO%</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-16">Mg. Mat%</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-22">Total Venda</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-22">Lucro</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-gray-200 w-16">Mg. Ef%</th>
-              <th className="px-2 py-2 border-b border-gray-200 w-8" />
+              <th className="px-2 py-2 text-left font-medium border-b border-border w-10">Item</th>
+              <th className="px-2 py-2 text-left font-medium border-b border-border w-8">Nº</th>
+              <th className="px-2 py-2 text-left font-medium border-b border-border">Descrição</th>
+              <th className="px-2 py-2 text-left font-medium border-b border-border w-28">Local</th>
+              <th className="px-2 py-2 text-center font-medium border-b border-border w-16">UN</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">QT</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo MO</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo Mat.</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Custo</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. MO%</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. Mat%</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Venda</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Lucro</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. Ef%</th>
+              <th className="px-2 py-2 border-b border-border w-8" />
             </tr>
           </thead>
           <tbody>
             {gruposCalculados.map(grupo => (
               <Fragment key={grupo.id}>
-                <tr className="bg-gray-50 font-semibold text-gray-700">
-                  <td className="px-2 py-1.5 border-b border-gray-200">{grupo.letra}</td>
-                  <td className="px-2 py-1.5 border-b border-gray-200" />
-                  <td className="px-2 py-1.5 border-b border-gray-200 uppercase">
+                <tr className="bg-muted/50 font-semibold text-muted-foreground">
+                  <td className="px-2 py-1.5 border-b border-border">{grupo.letra}</td>
+                  <td className="px-2 py-1.5 border-b border-border" />
+                  <td className="px-2 py-1.5 border-b border-border uppercase">
                     {grupo.disciplinas?.nome ?? '—'}
                   </td>
-                  <td colSpan={5} className="border-b border-gray-200" />
-                  <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                  <td colSpan={5} className="border-b border-border" />
+                  <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.total_custo)}
                   </td>
-                  <td colSpan={2} className="border-b border-gray-200" />
-                  <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                  <td colSpan={2} className="border-b border-border" />
+                  <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.total_venda)}
                   </td>
-                  <td className="px-2 py-1.5 text-right border-b border-gray-200 font-mono">
+                  <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.lucro)}
                   </td>
-                  <td className="border-b border-gray-200" />
-                  <td className="px-2 py-1.5 border-b border-gray-200 text-center">
+                  <td className="border-b border-border" />
+                  <td className="px-2 py-1.5 border-b border-border text-center">
                     <button
                       onClick={() => onRemoveGrupo(grupo.id)}
                       className="text-red-400 hover:text-red-600 font-bold"
@@ -353,9 +353,9 @@ export default function TabelaOrcamento({
                   </td>
                 </tr>
                 {grupo.itens_calculados.map(item => (
-                  <tr key={item.id} className="hover:bg-blue-50 border-b border-gray-100">
-                    <td className="px-2 py-1 text-gray-400">{grupo.letra}</td>
-                    <td className="px-2 py-1 text-gray-500">{item.numero}</td>
+                  <tr key={item.id} className="hover:bg-muted/50 border-b border-border/50">
+                    <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
                     <td className="px-2 py-1">
                       <CelulaEditavel
                         valor={item.descricao}
@@ -441,11 +441,11 @@ export default function TabelaOrcamento({
                   </tr>
                 ))}
                 <tr>
-                  <td colSpan={colsTecnica + 1} className="px-2 py-1 border-b border-gray-100">
+                  <td colSpan={colsTecnica + 1} className="px-2 py-1 border-b border-border/50">
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => onAddItem(grupo.id)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
                       >
                         + Adicionar item
                       </button>
@@ -461,7 +461,7 @@ export default function TabelaOrcamento({
               </Fragment>
             ))}
           </tbody>
-          <tfoot className="bg-gray-800 text-white font-semibold">
+          <tfoot className="bg-muted text-white font-semibold">
             <tr>
               <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_custo)}</td>
@@ -497,7 +497,7 @@ export default function TabelaOrcamento({
             </button>
             <button
               onClick={() => { setAdicionandoGrupo(false); setDisciplinaSelecionada('') }}
-              className="text-sm px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              className="text-sm px-3 py-1 bg-muted text-muted-foreground rounded hover:bg-muted"
             >
               Cancelar
             </button>
@@ -505,7 +505,7 @@ export default function TabelaOrcamento({
         ) : (
           <button
             onClick={() => setAdicionandoGrupo(true)}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
           >
             + Adicionar grupo
           </button>

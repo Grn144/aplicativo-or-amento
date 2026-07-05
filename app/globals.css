@@ -48,7 +48,10 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
+/* .tema-claro-fixo reaplica os tokens claros numa subárvore mesmo com .dark no html
+   (usado nas telas de auth, que são sempre claras por decisão de design) */
+:root,
+.tema-claro-fixo {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

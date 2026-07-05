@@ -3,7 +3,7 @@ import { MARCA } from '@/components/auth/marca'
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-linear-to-b from-slate-800 via-slate-900 to-slate-950 px-4 py-10">
+    <div className="tema-claro-fixo relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-linear-to-b from-slate-800 via-slate-900 to-slate-950 px-4 py-10">
       <BlueprintBackground />
       <main className="relative z-10 w-full max-w-md">{children}</main>
       <footer className="relative z-10 mt-8 text-center text-xs text-slate-400">

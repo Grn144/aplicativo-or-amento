@@ -33,12 +33,12 @@ const STATUS_LABELS: Record<StatusObra, string> = {
 }
 
 const STATUS_COLORS: Record<StatusObra, string> = {
-  rascunho: 'bg-gray-100 text-gray-700',
-  enviado: 'bg-blue-100 text-blue-700',
-  aprovado: 'bg-green-100 text-green-700',
-  em_execucao: 'bg-yellow-100 text-yellow-700',
-  concluido: 'bg-emerald-100 text-emerald-700',
-  cancelado: 'bg-red-100 text-red-700',
+  rascunho: 'bg-gray-500/10 text-gray-600 dark:text-gray-300',
+  enviado: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+  aprovado: 'bg-green-500/10 text-green-600 dark:text-green-400',
+  em_execucao: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  concluido: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  cancelado: 'bg-red-500/10 text-red-600 dark:text-red-400',
 }
 
 type ObraItem = {
@@ -151,7 +151,7 @@ export default function ObrasPage() {
     <div className="p-6">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Obras</h1>
+        <h1 className="text-2xl font-bold">Obras</h1>
         <Button onClick={abrirModal}>+ Nova obra</Button>
       </div>
 
@@ -178,13 +178,13 @@ export default function ObrasPage() {
 
       {/* Tabela */}
       {carregando ? (
-        <p className="text-gray-500">Carregando...</p>
+        <p className="text-muted-foreground">Carregando...</p>
       ) : obras.length === 0 ? (
-        <p className="text-gray-500">Nenhuma obra encontrada.</p>
+        <p className="text-muted-foreground">Nenhuma obra encontrada.</p>
       ) : (
-        <div className="overflow-x-auto rounded border border-gray-200">
+        <div className="overflow-x-auto rounded-2xl border border-border bg-card">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600 text-left">
+            <thead className="bg-muted/50 text-muted-foreground text-left">
               <tr>
                 <th className="px-4 py-3 font-medium">Código</th>
                 <th className="px-4 py-3 font-medium">Nome</th>
@@ -199,17 +199,17 @@ export default function ObrasPage() {
                 <tr
                   key={obra.id}
                   onClick={() => router.push(`/obras/${obra.id}`)}
-                  className="border-t border-gray-100 hover:bg-blue-50 cursor-pointer"
+                  className="border-t border-border/50 hover:bg-muted/50 cursor-pointer"
                 >
                   <td className="px-4 py-3 font-mono text-xs">{obra.codigo}</td>
                   <td className="px-4 py-3 font-medium">{obra.nome}</td>
-                  <td className="px-4 py-3 text-gray-600">{obra.clientes?.razao_social ?? '—'}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{obra.clientes?.razao_social ?? '—'}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[obra.status]}`}>
                       {STATUS_LABELS[obra.status]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {obra.data_orcamento
                       ? new Date(obra.data_orcamento + 'T00:00:00').toLocaleDateString('pt-BR')
                       : '—'}

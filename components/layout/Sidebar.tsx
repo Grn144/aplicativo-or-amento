@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import {
-  Building2, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X,
+  Building2, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X,
 } from 'lucide-react'
 import { MARCA } from '@/components/auth/marca'
 import type { Papel } from '@/types/database'
@@ -23,12 +24,17 @@ const ITENS = [
 
 export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }) {
   const pathname = usePathname()
+  const { resolvedTheme, setTheme } = useTheme()
   const [colapsada, setColapsada] = useState(false)
   const [drawerAberto, setDrawerAberto] = useState(false)
+  const [montado, setMontado] = useState(false)
 
   useEffect(() => {
     setColapsada(localStorage.getItem('sidebar-colapsada') === 'true')
+    setMontado(true)
   }, [])
+
+  const escuro = montado && resolvedTheme === 'dark'
 
   function alternarColapso() {
     const nova = !colapsada
@@ -80,6 +86,18 @@ export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }
           )
         })}
       </nav>
+
+      {/* Tema claro/escuro */}
+      <button
+        type="button"
+        onClick={() => setTheme(escuro ? 'light' : 'dark')}
+        title={colapsada ? 'Alternar tema' : undefined}
+        aria-label="Alternar tema"
+        className="mx-2 mb-1 flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      >
+        {escuro ? <Sun className="size-5 shrink-0" /> : <Moon className="size-5 shrink-0" />}
+        {!colapsada && (escuro ? 'Tema claro' : 'Tema escuro')}
+      </button>
 
       {/* Colapsar (só desktop) */}
       <button
