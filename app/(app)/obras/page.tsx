@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -87,6 +87,14 @@ export default function ObrasPage() {
   const [novaObra, setNovaObra] = useState({ codigo: '', nome: '', cliente_id: '', data_orcamento: '' })
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('novo') === '1') abrirModal()
+    // roda uma única vez na montagem
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const carregarObras = useCallback(async () => {
     setCarregando(true)
