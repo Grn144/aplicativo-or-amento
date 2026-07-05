@@ -32,20 +32,34 @@ function NovaSenhaForm() {
   )
 
   useEffect(() => {
-    // O Supabase envia o link com ?code=xxx (PKCE flow)
+    // Fluxo atual: nosso email (via Resend) traz ?token_hash=xxx, validado com verifyOtp.
+    // Fallback: links antigos do Supabase traziam ?code=xxx (PKCE).
+    const tokenHash = searchParams.get('token_hash')
     const code = searchParams.get('code')
-    if (!code) {
-      setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
+
+    if (tokenHash) {
+      supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash }).then(({ error }) => {
+        if (error) {
+          setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
+        } else {
+          setSessaoOk(true)
+        }
+      })
       return
     }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
-      } else {
-        setSessaoOk(true)
-      }
-    })
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
+        } else {
+          setSessaoOk(true)
+        }
+      })
+      return
+    }
+
+    setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
   }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSubmit(e: React.FormEvent) {
