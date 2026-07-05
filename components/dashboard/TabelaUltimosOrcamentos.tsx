@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowUpDown, Eye, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -43,6 +43,10 @@ export function TabelaUltimosOrcamentos({
   const [pagina, setPagina] = useState(0)
   const [excluindo, setExcluindo] = useState<LinhaOrcamento | null>(null)
   const [salvando, setSalvando] = useState(false)
+
+  useEffect(() => {
+    setPagina(0)
+  }, [busca])
 
   const filtradas = useMemo(() => {
     let r = linhas

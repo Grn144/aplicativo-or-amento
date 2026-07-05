@@ -1,13 +1,19 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import type { LinhaOrcamento } from '@/lib/dashboard/metricas'
 
+let searchParamsAtual = new URLSearchParams()
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => searchParamsAtual,
 }))
 
 import { TabelaUltimosOrcamentos } from './TabelaUltimosOrcamentos'
+
+beforeEach(() => {
+  searchParamsAtual = new URLSearchParams()
+})
 
 function linha(over: Partial<LinhaOrcamento>): LinhaOrcamento {
   return {
@@ -58,5 +64,18 @@ describe('TabelaUltimosOrcamentos', () => {
   it('esconde a ação excluir sem permissão', () => {
     render(<TabelaUltimosOrcamentos linhas={[linha({})]} podeExcluir={false} />)
     expect(screen.queryByLabelText(/excluir/i)).not.toBeInTheDocument()
+  })
+
+  it('reseta a página ao mudar o termo de busca', () => {
+    const linhas = Array.from({ length: 12 }, (_, i) => linha({ id: String(i), codigo: `C${i}` }))
+    const { rerender } = render(<TabelaUltimosOrcamentos linhas={linhas} podeExcluir={false} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /próxima/i }))
+    expect(screen.getByText(/página 2 de/i)).toBeInTheDocument()
+
+    searchParamsAtual = new URLSearchParams({ busca: 'c' })
+    rerender(<TabelaUltimosOrcamentos linhas={linhas} podeExcluir={false} />)
+
+    expect(screen.getByText(/página 1 de/i)).toBeInTheDocument()
   })
 })
