@@ -47,7 +47,7 @@ export async function POST(
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const wb = new ExcelJS.Workbook()
-  await wb.xlsx.load(buffer)
+  await wb.xlsx.load(buffer as unknown as Parameters<typeof wb.xlsx.load>[0])
 
   const ws = wb.worksheets[0]
   if (!ws) return NextResponse.json({ error: 'Planilha vazia ou inválida' }, { status: 400 })

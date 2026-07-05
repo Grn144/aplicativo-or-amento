@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,14 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
 export default function NovaSenhaPage() {
+  return (
+    <Suspense fallback={null}>
+      <NovaSenhaForm />
+    </Suspense>
+  )
+}
+
+function NovaSenhaForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [senha, setSenha] = useState('')

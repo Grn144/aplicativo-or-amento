@@ -46,7 +46,7 @@ export async function GET(
   const ws = wb.addWorksheet(titulo)
   const fmtBRL = '#,##0.00'
 
-  const clienteNome = (obra.clientes as { razao_social: string } | null)?.razao_social ?? ''
+  const clienteNome = (obra.clientes as unknown as { razao_social: string } | null)?.razao_social ?? ''
 
   if (tipo === 'tecnico') {
     // ── EXPORTAÇÃO TÉCNICA (custos + margens + venda + lucro) ──
@@ -93,7 +93,7 @@ export async function GET(
     let totCusto = 0, totVenda = 0, totLucro = 0
 
     for (const grupo of grupos) {
-      const disc = (grupo.disciplinas as { nome: string } | null)?.nome ?? '—'
+      const disc = (grupo.disciplinas as unknown as { nome: string } | null)?.nome ?? '—'
       const gr = ws.addRow([grupo.letra, '', disc.toUpperCase()])
       gr.eachCell({ includeEmpty: true }, cell => {
         cell.font = { bold: true }
@@ -111,7 +111,7 @@ export async function GET(
           margem_mao_obra_pct: Number(item.margem_mao_obra_pct),
           margem_material_pct: Number(item.margem_material_pct),
         })
-        const sigla = (item.unidades_medida as { sigla: string } | null)?.sigla ?? ''
+        const sigla = (item.unidades_medida as unknown as { sigla: string } | null)?.sigla ?? ''
         const row = ws.addRow([
           grupo.letra, item.numero, item.descricao, item.local ?? '', sigla,
           Number(item.quantidade),
@@ -181,7 +181,7 @@ export async function GET(
     let totMO = 0, totMat = 0, totGeral = 0
 
     for (const grupo of grupos) {
-      const disc = (grupo.disciplinas as { nome: string } | null)?.nome ?? '—'
+      const disc = (grupo.disciplinas as unknown as { nome: string } | null)?.nome ?? '—'
       const gr = ws.addRow([grupo.letra, '', disc.toUpperCase()])
       gr.eachCell({ includeEmpty: true }, cell => {
         cell.font = { bold: true }
@@ -199,7 +199,7 @@ export async function GET(
           margem_mao_obra_pct: Number(item.margem_mao_obra_pct),
           margem_material_pct: Number(item.margem_material_pct),
         })
-        const sigla = (item.unidades_medida as { sigla: string } | null)?.sigla ?? ''
+        const sigla = (item.unidades_medida as unknown as { sigla: string } | null)?.sigla ?? ''
         const row = ws.addRow([
           grupo.letra, item.numero, item.descricao, item.local ?? '', sigla,
           Number(item.quantidade),
