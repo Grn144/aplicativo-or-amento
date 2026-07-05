@@ -12,7 +12,7 @@ import { GraficoAreaConversao } from '@/components/dashboard/GraficoAreaConversa
 import { TabelaUltimosOrcamentos } from '@/components/dashboard/TabelaUltimosOrcamentos'
 import { TopClientes } from '@/components/dashboard/TopClientes'
 import { AtividadesRecentes, type Atividade } from '@/components/dashboard/AtividadesRecentes'
-// import { RealtimeRefresh } from '@/components/dashboard/RealtimeRefresh'
+import { RealtimeRefresh } from '@/components/dashboard/RealtimeRefresh'
 
 export default async function DashboardPage({
   searchParams,
@@ -72,7 +72,7 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6 p-6" id="area-impressao">
-      {/* <RealtimeRefresh /> */}
+      <RealtimeRefresh />
       <HeaderDashboard periodo={periodo} usuario={{ nome: usuario?.nome ?? 'Usuário' }} />
 
       {/* KPIs */}

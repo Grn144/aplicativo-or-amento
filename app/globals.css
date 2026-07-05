@@ -128,3 +128,19 @@
     @apply font-sans;
   }
 }
+
+@media print {
+  aside,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    overflow: visible !important;
+  }
+  #area-impressao {
+    padding: 0;
+  }
+  #area-impressao > div {
+    break-inside: avoid;
+  }
+}
