@@ -1,0 +1,162 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import {
+  Building2, LayoutDashboard, LogOut, Menu, PanelLeftClose, PanelLeftOpen, X,
+} from 'lucide-react'
+import { MARCA } from '@/components/auth/marca'
+import type { Papel } from '@/types/database'
+
+const PAPEL_LABELS: Record<Papel, string> = {
+  admin: 'Administrador',
+  engenheiro: 'Engenheiro',
+  orcamentista: 'Orçamentista',
+  visualizador: 'Visualizador',
+}
+
+const ITENS = [
+  { href: '/dashboard', label: 'Dashboard', Icone: LayoutDashboard },
+  { href: '/obras', label: 'Obras', Icone: Building2 },
+]
+
+export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }) {
+  const pathname = usePathname()
+  const [colapsada, setColapsada] = useState(false)
+  const [drawerAberto, setDrawerAberto] = useState(false)
+
+  useEffect(() => {
+    setColapsada(localStorage.getItem('sidebar-colapsada') === 'true')
+  }, [])
+
+  function alternarColapso() {
+    const nova = !colapsada
+    setColapsada(nova)
+    localStorage.setItem('sidebar-colapsada', String(nova))
+  }
+
+  const iniciais = usuario.nome
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase())
+    .join('')
+
+  const conteudo = (
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      {/* Logo */}
+      <div className="flex items-center gap-3 border-b border-sidebar-border p-4">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-blue-600">
+          <Building2 className="size-5 text-white" aria-hidden="true" />
+        </div>
+        {!colapsada && (
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">{MARCA.nome}</p>
+            <p className="truncate text-xs text-muted-foreground">{MARCA.subtitulo}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Menu */}
+      <nav className="flex-1 space-y-1 p-2">
+        {ITENS.map(({ href, label, Icone }) => {
+          const ativo = pathname.startsWith(href)
+          return (
+            <Link
+              key={href}
+              href={href}
+              title={colapsada ? label : undefined}
+              onClick={() => setDrawerAberto(false)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+                ativo
+                  ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
+                  : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+              }`}
+            >
+              <Icone className="size-5 shrink-0" aria-hidden="true" />
+              {!colapsada && label}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* Colapsar (só desktop) */}
+      <button
+        type="button"
+        onClick={alternarColapso}
+        className="mx-2 mb-2 hidden items-center gap-3 rounded-xl px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent md:flex"
+        aria-label={colapsada ? 'Expandir menu' : 'Recolher menu'}
+      >
+        {colapsada ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
+        {!colapsada && 'Recolher'}
+      </button>
+
+      {/* Perfil */}
+      <div className="border-t border-sidebar-border p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+            {iniciais}
+          </div>
+          {!colapsada && (
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{usuario.nome}</p>
+              <p className="truncate text-xs text-muted-foreground">{PAPEL_LABELS[usuario.papel]}</p>
+            </div>
+          )}
+          <form action="/api/auth/logout" method="POST">
+            <button
+              type="submit"
+              title="Sair"
+              aria-label="Sair"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-destructive"
+            >
+              <LogOut className="size-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Botão hambúrguer mobile */}
+      <button
+        type="button"
+        onClick={() => setDrawerAberto(true)}
+        aria-label="Abrir menu"
+        className="fixed left-4 top-4 z-40 rounded-xl border border-border bg-card p-2 shadow-sm md:hidden"
+      >
+        <Menu className="size-5" />
+      </button>
+
+      {/* Drawer mobile */}
+      {drawerAberto && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDrawerAberto(false)} />
+          <aside className="absolute inset-y-0 left-0 w-64 border-r border-sidebar-border">
+            <button
+              type="button"
+              onClick={() => setDrawerAberto(false)}
+              aria-label="Fechar menu"
+              className="absolute right-2 top-2 z-10 rounded-lg p-2 text-muted-foreground"
+            >
+              <X className="size-5" />
+            </button>
+            {conteudo}
+          </aside>
+        </div>
+      )}
+
+      {/* Sidebar desktop */}
+      <aside
+        className={`hidden shrink-0 border-r border-sidebar-border transition-all md:block ${
+          colapsada ? 'w-16' : 'w-60'
+        }`}
+      >
+        {conteudo}
+      </aside>
+    </>
+  )
+}
