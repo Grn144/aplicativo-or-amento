@@ -11,7 +11,11 @@ describe('AuthLayout', () => {
     )
     expect(screen.getByText('conteudo-filho')).toBeInTheDocument()
     expect(
-      screen.getByText(`© 2026 ${MARCA.nome} · Versão ${MARCA.versao}`)
+      screen.getByText(new RegExp(`© 2026 ${MARCA.nome} · Versão ${MARCA.versao}`))
     ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Privacidade' })).toHaveAttribute(
+      'href',
+      '/privacidade'
+    )
   })
 })
