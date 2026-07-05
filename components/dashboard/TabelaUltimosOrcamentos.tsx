@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowUpDown, Eye, Pencil, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
@@ -79,9 +80,14 @@ export function TabelaUltimosOrcamentos({
   async function confirmarExclusao() {
     if (!excluindo) return
     setSalvando(true)
-    await fetch(`/api/obras/${excluindo.id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/obras/${excluindo.id}`, { method: 'DELETE' })
     setSalvando(false)
+    if (!res.ok) {
+      toast.error('Não foi possível excluir o orçamento')
+      return
+    }
     setExcluindo(null)
+    toast('Orçamento excluído')
     router.refresh()
   }
 

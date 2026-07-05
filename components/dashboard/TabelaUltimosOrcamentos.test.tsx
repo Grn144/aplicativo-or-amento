@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import type { LinhaOrcamento } from '@/lib/dashboard/metricas'
 
@@ -9,10 +9,18 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParamsAtual,
 }))
 
+vi.mock('sonner', () => ({
+  toast: Object.assign(vi.fn(), { error: vi.fn() }),
+}))
+
 import { TabelaUltimosOrcamentos } from './TabelaUltimosOrcamentos'
 
 beforeEach(() => {
   searchParamsAtual = new URLSearchParams()
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 function linha(over: Partial<LinhaOrcamento>): LinhaOrcamento {
@@ -64,6 +72,21 @@ describe('TabelaUltimosOrcamentos', () => {
   it('esconde a ação excluir sem permissão', () => {
     render(<TabelaUltimosOrcamentos linhas={[linha({})]} podeExcluir={false} />)
     expect(screen.queryByLabelText(/excluir/i)).not.toBeInTheDocument()
+  })
+
+  it('mantém o dialog aberto quando a exclusão falha', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<TabelaUltimosOrcamentos linhas={[linha({})]} podeExcluir={true} />)
+    fireEvent.click(screen.getByLabelText(/excluir/i))
+    expect(screen.getByText(/esta ação não pode ser desfeita/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir' }))
+
+    await screen.findByRole('button', { name: 'Excluir' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/obras/1', { method: 'DELETE' })
+    expect(screen.getByText(/esta ação não pode ser desfeita/i)).toBeInTheDocument()
   })
 
   it('reseta a página ao mudar o termo de busca', () => {

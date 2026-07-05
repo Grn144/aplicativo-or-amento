@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 
-const TABELAS = ['obras', 'grupos_orcamento', 'itens_orcamento']
+const TABELAS = ['obras', 'grupos_orcamento', 'itens_orcamento', 'historico_alteracoes']
 
 export function RealtimeRefresh() {
   const router = useRouter()
