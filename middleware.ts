@@ -33,18 +33,20 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/verificar') ||
     pathname.startsWith('/esqueci-senha') ||
     pathname.startsWith('/nova-senha')
+  // Páginas públicas: acessíveis com ou sem sessão, sem redirecionamentos
+  const isPublica = pathname.startsWith('/privacidade')
 
   const mfaVerificado = request.cookies.get('mfa_verificado')?.value === 'true'
   // Cookie de sessão setado após login, antes de completar o MFA
   const mfaEmAndamento = request.cookies.get('mfa_em_andamento')?.value === 'true'
 
   // Sem sessão Supabase → login
-  if (!user && !isAuthPage) {
+  if (!user && !isAuthPage && !isPublica) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   // Tem sessão Supabase mas sem mfa_verificado
-  if (user && !mfaVerificado && !isAuthPage) {
+  if (user && !mfaVerificado && !isAuthPage && !isPublica) {
     // Permitir apenas se o MFA estiver em andamento e estiver indo para /verificar
     if (mfaEmAndamento && pathname === '/verificar') {
       return supabaseResponse

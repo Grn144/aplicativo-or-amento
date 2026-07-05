@@ -7,7 +7,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <BlueprintBackground />
       <main className="relative z-10 w-full max-w-md">{children}</main>
       <footer className="relative z-10 mt-8 text-center text-xs text-slate-400">
-        © 2026 {MARCA.nome} · Versão {MARCA.versao}
+        © 2026 {MARCA.nome} · Versão {MARCA.versao} ·{' '}
+        <a href="/privacidade" className="underline hover:text-slate-200">
+          Privacidade
+        </a>
       </footer>
     </div>
   )

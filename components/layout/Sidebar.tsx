@@ -133,6 +133,14 @@ export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }
             </button>
           </form>
         </div>
+        {!colapsada && (
+          <Link
+            href="/privacidade"
+            className="mt-2 block text-center text-xs text-muted-foreground hover:underline"
+          >
+            Privacidade
+          </Link>
+        )}
       </div>
     </div>
   )
