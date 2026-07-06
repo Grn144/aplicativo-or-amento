@@ -14,6 +14,27 @@ export async function PUT(
   const body = await lerJson(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
+  // Unidade por sigla digitada: resolve para unidade_id (cria a unidade se não existir)
+  if ('unidade_sigla' in body) {
+    const sigla = String(body.unidade_sigla ?? '').trim().toUpperCase()
+    if (!sigla) {
+      body.unidade_id = null
+    } else {
+      const { data: existente } = await supabase
+        .from('unidades_medida').select('id').ilike('sigla', sigla).maybeSingle()
+      if (existente) {
+        body.unidade_id = existente.id
+      } else {
+        const { data: nova, error: errUn } = await supabase
+          .from('unidades_medida').insert({ sigla }).select('id').single()
+        if (errUn || !nova) {
+          return NextResponse.json({ error: 'Falha ao criar unidade' }, { status: 500 })
+        }
+        body.unidade_id = nova.id
+      }
+    }
+  }
+
   const campos = [
     'descricao', 'local', 'unidade_id', 'quantidade',
     'custo_unit_mao_obra', 'custo_unit_material',

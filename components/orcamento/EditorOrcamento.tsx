@@ -36,6 +36,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const [exportando, setExportando] = useState<'tecnico' | 'comercial' | null>(null)
   const [importando, setImportando] = useState(false)
   const [disciplinasList, setDisciplinasList] = useState(disciplinas)
+  const [unidadesList, setUnidadesList] = useState(unidades)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
@@ -158,6 +159,28 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     ))
   }
 
+  async function atualizarUnidade(grupoId: string, itemId: string, sigla: string) {
+    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ unidade_sigla: sigla }),
+    })
+    if (!res.ok) return
+    const atualizado = await res.json() as ItemOrcamento & { unidades_medida?: UnidadeMedida | null }
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: g.itens_orcamento.map(it => (it.id !== itemId ? it : atualizado)),
+      }
+    ))
+    const u = atualizado.unidades_medida
+    if (u && !unidadesList.some(x => x.id === u.id)) {
+      setUnidadesList(prev =>
+        [...prev, { id: u.id, sigla: u.sigla }].sort((a, b) => a.sigla.localeCompare(b.sigla, 'pt-BR'))
+      )
+    }
+  }
+
   async function removerItem(grupoId: string, itemId: string) {
     const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
       method: 'DELETE',
@@ -217,8 +240,9 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         visao="tecnica"
         obraId={obra.id}
         disciplinas={disciplinasList}
-        unidades={unidades}
+        unidades={unidadesList}
         onUpdateItem={atualizarItem}
+        onUpdateUnidade={atualizarUnidade}
         onAddDisciplina={adicionarDisciplina}
         onRemoveGrupo={removerGrupo}
         onAddItem={adicionarItem}

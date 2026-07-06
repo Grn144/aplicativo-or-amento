@@ -1,13 +1,6 @@
 'use client'
 
 import { Fragment, useRef, useState } from 'react'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { fmt, fmtPct } from '@/lib/format'
 import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
 import type { Disciplina, UnidadeMedida } from '@/types/database'
@@ -20,6 +13,7 @@ interface Props {
   disciplinas: Pick<Disciplina, 'id' | 'nome'>[]
   unidades: Pick<UnidadeMedida, 'id' | 'sigla'>[]
   onUpdateItem: (grupoId: string, itemId: string, campo: string, valor: unknown) => Promise<void>
+  onUpdateUnidade: (grupoId: string, itemId: string, sigla: string) => Promise<void>
   onAddDisciplina: (nome: string) => Promise<void>
   onRemoveGrupo: (grupoId: string) => Promise<void>
   onAddItem: (grupoId: string) => Promise<void>
@@ -93,6 +87,7 @@ export default function TabelaOrcamento({
   disciplinas,
   unidades,
   onUpdateItem,
+  onUpdateUnidade,
   onAddDisciplina,
   onRemoveGrupo,
   onAddItem,
@@ -181,20 +176,20 @@ export default function TabelaOrcamento({
                         />
                       </td>
                       <td className="px-2 py-1 text-center">
-                        <Select
-                          value={item.unidade_id ?? ''}
-                          onValueChange={v => onUpdateItem(grupo.id, item.id, 'unidade_id', (v ?? '') || null)}
-                        >
-                          <SelectTrigger className="h-6 text-xs">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="">—</SelectItem>
-                            {unidades.map(u => (
-                              <SelectItem key={u.id} value={u.id}>{u.sigla}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <input
+                          key={item.unidade_id ?? 'sem-unidade'}
+                          list="lista-unidades"
+                          defaultValue={item.unidades_medida?.sigla ?? ''}
+                          onBlur={e => {
+                            const nova = e.target.value.trim().toUpperCase()
+                            if (nova !== (item.unidades_medida?.sigla ?? '')) {
+                              onUpdateUnidade(grupo.id, item.id, nova)
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                          placeholder="—"
+                          className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
+                        />
                       </td>
                       <td className="px-2 py-1">
                         <CelulaEditavel
@@ -298,6 +293,11 @@ export default function TabelaOrcamento({
   // Visão Técnica
   return (
     <div className="space-y-2">
+      <datalist id="lista-unidades">
+        {unidades.map(u => (
+          <option key={u.id} value={u.sigla} />
+        ))}
+      </datalist>
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full text-xs border-collapse">
           <thead className="bg-muted text-muted-foreground">
@@ -368,20 +368,20 @@ export default function TabelaOrcamento({
                       />
                     </td>
                     <td className="px-2 py-1">
-                      <Select
-                        value={item.unidade_id ?? ''}
-                        onValueChange={v => onUpdateItem(grupo.id, item.id, 'unidade_id', (v ?? '') || null)}
-                      >
-                        <SelectTrigger className="h-6 text-xs">
-                          <SelectValue placeholder="—" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">—</SelectItem>
-                          {unidades.map(u => (
-                            <SelectItem key={u.id} value={u.id}>{u.sigla}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <input
+                        key={item.unidade_id ?? 'sem-unidade'}
+                        list="lista-unidades"
+                        defaultValue={item.unidades_medida?.sigla ?? ''}
+                        onBlur={e => {
+                          const nova = e.target.value.trim().toUpperCase()
+                          if (nova !== (item.unidades_medida?.sigla ?? '')) {
+                            onUpdateUnidade(grupo.id, item.id, nova)
+                          }
+                        }}
+                        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                        placeholder="—"
+                        className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
+                      />
                     </td>
                     <td className="px-2 py-1">
                       <CelulaEditavel
