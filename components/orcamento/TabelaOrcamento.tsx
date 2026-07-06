@@ -71,9 +71,9 @@ function CelulaEditavel({
 
   return (
     <div
-      onDoubleClick={abrir}
-      className={`cursor-default hover:bg-muted/50 rounded px-1 select-none ${className ?? ''}`}
-      title="Duplo clique para editar"
+      onClick={abrir}
+      className={`cursor-text hover:bg-muted/50 rounded px-1 min-h-[1.25rem] ${className ?? ''}`}
+      title="Clique para editar"
     >
       {tipo === 'number' ? fmt(Number(valor)) : String(valor || '—')}
     </div>
