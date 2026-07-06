@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { fmt, fmtPct } from '@/lib/format'
 import type { StatusObra } from '@/types/database'
+import type { Rentabilidade } from '@/types/orcamento'
 
 const STATUS_LABELS: Record<StatusObra, string> = {
   rascunho: 'Rascunho',
@@ -33,15 +35,23 @@ interface ObraCabecalho {
 interface Props {
   obra: ObraCabecalho
   clientes: { id: string; razao_social: string }[]
+  fatores: { fee_fator: number; comissao_pct: number; imposto_pct: number }
+  onFatorChange: (campo: 'fee_fator' | 'comissao_pct' | 'imposto_pct', valor: number) => void
+  rentabilidade: Rentabilidade
 }
 
-export default function CabecalhoObra({ obra, clientes }: Props) {
+export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, rentabilidade }: Props) {
   const [campos, setCampos] = useState({
     codigo: obra.codigo,
     nome: obra.nome,
     status: obra.status,
     cliente_id: obra.clientes?.id ?? '',
     data_orcamento: obra.data_orcamento ?? '',
+  })
+  const [fatoresTexto, setFatoresTexto] = useState({
+    fee_fator: String(fatores.fee_fator),
+    comissao_pct: String(fatores.comissao_pct),
+    imposto_pct: String(fatores.imposto_pct),
   })
 
   async function salvar(campo: string, valor: string | null) {
@@ -123,6 +133,85 @@ export default function CabecalhoObra({ obra, clientes }: Props) {
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-border">
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">FEE</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={fatoresTexto.fee_fator}
+            onChange={e => setFatoresTexto(p => ({ ...p, fee_fator: e.target.value }))}
+            onBlur={() => onFatorChange('fee_fator', parseFloat(fatoresTexto.fee_fator) || 0)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Comissão %</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={fatoresTexto.comissao_pct}
+            onChange={e => setFatoresTexto(p => ({ ...p, comissao_pct: e.target.value }))}
+            onBlur={() => onFatorChange('comissao_pct', parseFloat(fatoresTexto.comissao_pct) || 0)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Imposto %</Label>
+          <Input
+            type="number"
+            step="0.01"
+            value={fatoresTexto.imposto_pct}
+            onChange={e => setFatoresTexto(p => ({ ...p, imposto_pct: e.target.value }))}
+            onBlur={() => onFatorChange('imposto_pct', parseFloat(fatoresTexto.imposto_pct) || 0)}
+          />
+        </div>
+      </div>
+
+      <div className="bg-card rounded-lg border border-border p-4 mt-4">
+        <h3 className="text-xs text-muted-foreground mb-3">Resumo de Rentabilidade</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Faturamento</Label>
+            <p className="text-sm font-medium">R$ {fmt(rentabilidade.faturamento)}</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Comissão</Label>
+            <p className="text-sm font-medium">R$ {fmt(rentabilidade.comissao)}</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Imposto</Label>
+            <p className="text-sm font-medium">R$ {fmt(rentabilidade.imposto)}</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Custo</Label>
+            <p className="text-sm font-medium">R$ {fmt(rentabilidade.custo_com_fee)}</p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Líquido</Label>
+            <p
+              className={
+                rentabilidade.liquido >= 0
+                  ? 'text-sm font-semibold text-green-600 dark:text-green-400'
+                  : 'text-sm font-semibold'
+              }
+            >
+              R$ {fmt(rentabilidade.liquido)}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">Líquido %</Label>
+            <p
+              className={
+                rentabilidade.liquido_pct !== null && rentabilidade.liquido_pct >= 0
+                  ? 'text-sm font-semibold text-green-600 dark:text-green-400'
+                  : 'text-sm font-semibold'
+              }
+            >
+              {rentabilidade.liquido_pct === null ? '—' : fmtPct(rentabilidade.liquido_pct)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

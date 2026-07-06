@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { calcularGrupo, calcularTotaisGerais } from '@/lib/calculos'
+import { calcularGrupo, calcularRentabilidade, calcularTotaisGerais } from '@/lib/calculos'
 import type { Cliente, Disciplina, GrupoOrcamento, ItemOrcamento, UnidadeMedida } from '@/types/database'
 import type { GrupoCalculado, TotaisGerais } from '@/types/orcamento'
 import CabecalhoObra from './CabecalhoObra'
@@ -40,11 +40,26 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const [importando, setImportando] = useState(false)
   const [disciplinasList, setDisciplinasList] = useState(disciplinas)
   const [unidadesList, setUnidadesList] = useState(unidades)
+  const [fatores, setFatores] = useState({
+    fee_fator: obra.fee_fator ?? 1.02,
+    comissao_pct: obra.comissao_pct ?? 12,
+    imposto_pct: obra.imposto_pct ?? 30,
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const feeFator = obra.fee_fator ?? 1.02
+  const feeFator = fatores.fee_fator
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g, feeFator))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
+  const rentabilidade = calcularRentabilidade(gruposCalculados, fatores)
+
+  async function salvarFator(campo: 'fee_fator' | 'comissao_pct' | 'imposto_pct', valor: number) {
+    setFatores(prev => ({ ...prev, [campo]: valor }))
+    await fetch(`/api/obras/${obra.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [campo]: valor }),
+    })
+  }
 
   async function exportar(tipo: 'tecnico' | 'comercial') {
     setExportando(tipo)
@@ -209,7 +224,13 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         onChange={handleImportFile}
       />
 
-      <CabecalhoObra obra={obra} clientes={clientes} />
+      <CabecalhoObra
+        obra={obra}
+        clientes={clientes}
+        fatores={fatores}
+        onFatorChange={salvarFator}
+        rentabilidade={rentabilidade}
+      />
 
       <div className="flex items-center justify-between">
         <h2 className="text-base font-semibold">Orçamento</h2>

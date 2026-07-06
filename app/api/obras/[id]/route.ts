@@ -59,7 +59,7 @@ export async function PUT(
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
   // Campos permitidos para atualização do cabeçalho
-  const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status'] as const
+  const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status', 'fee_fator', 'comissao_pct', 'imposto_pct'] as const
   const updates: Record<string, unknown> = { atualizado_em: new Date().toISOString() }
   for (const campo of campos) {
     if (campo in body) updates[campo] = body[campo]
