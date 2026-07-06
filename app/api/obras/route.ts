@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       grupos_orcamento (
         itens_orcamento (
           quantidade, custo_unit_mao_obra, custo_unit_material,
-          margem_mao_obra_pct, margem_material_pct
+          markup_mao_obra, markup_material
         )
       )
     `)

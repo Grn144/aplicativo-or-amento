@@ -37,6 +37,9 @@ export interface Obra {
   nome: string
   data_orcamento: string | null
   status: StatusObra
+  fee_fator: number
+  comissao_pct: number
+  imposto_pct: number
   criado_por: string | null
   criado_em: string
   atualizado_em: string
@@ -64,8 +67,8 @@ export interface ItemOrcamento {
   quantidade: number
   custo_unit_mao_obra: number
   custo_unit_material: number
-  margem_mao_obra_pct: number
-  margem_material_pct: number
+  markup_mao_obra: number
+  markup_material: number
   observacao: string | null
   observacao_2: string | null
   ordem: number

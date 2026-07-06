@@ -311,8 +311,8 @@ export default function TabelaOrcamento({
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo MO</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo Mat.</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Custo</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. MO%</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. Mat%</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup MO</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup Mat.</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Venda</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Lucro</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. Ef%</th>
@@ -410,18 +410,18 @@ export default function TabelaOrcamento({
                     <td className="px-2 py-1 text-right font-mono">{fmt(item.total_custo)}</td>
                     <td className="px-2 py-1">
                       <CelulaEditavel
-                        valor={item.margem_mao_obra_pct}
+                        valor={item.markup_mao_obra}
                         tipo="number"
                         className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'margem_mao_obra_pct', parseFloat(v) || 0)}
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_mao_obra', parseFloat(v) || 0)}
                       />
                     </td>
                     <td className="px-2 py-1">
                       <CelulaEditavel
-                        valor={item.margem_material_pct}
+                        valor={item.markup_material}
                         tipo="number"
                         className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'margem_material_pct', parseFloat(v) || 0)}
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 0)}
                       />
                     </td>
                     <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>

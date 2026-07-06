@@ -16,8 +16,8 @@ export interface ObraDashboard {
       quantidade: number
       custo_unit_mao_obra: number
       custo_unit_material: number
-      margem_mao_obra_pct: number
-      margem_material_pct: number
+      markup_mao_obra: number
+      markup_material: number
     }[]
   }[]
 }
@@ -82,7 +82,7 @@ function calcularObra(obra: ObraDashboard): { venda: number; custo: number } {
         id: '', grupo_id: '', numero: 0, descricao: '', local: null,
         unidade_id: null, observacao: null, observacao_2: null, ordem: 0,
         ...item,
-      })
+      }, 1.02) // fee padrão para KPIs; o valor por obra é aplicado no editor/export
       return { venda: acc.venda + c.total_venda, custo: acc.custo + c.total_custo }
     },
     { venda: 0, custo: 0 }

@@ -53,8 +53,8 @@ type ObraItem = {
       quantidade: number
       custo_unit_mao_obra: number
       custo_unit_material: number
-      margem_mao_obra_pct: number
-      margem_material_pct: number
+      markup_mao_obra: number
+      markup_material: number
     }[]
   }[]
 }
@@ -69,9 +69,9 @@ function calcularTotalVendaObra(obra: ObraItem): number {
       quantidade: item.quantidade,
       custo_unit_mao_obra: item.custo_unit_mao_obra,
       custo_unit_material: item.custo_unit_material,
-      margem_mao_obra_pct: item.margem_mao_obra_pct,
-      margem_material_pct: item.margem_material_pct,
-    })
+      markup_mao_obra: item.markup_mao_obra,
+      markup_material: item.markup_material,
+    }, 1.02)
     return sum + calc.total_venda
   }, 0)
 }

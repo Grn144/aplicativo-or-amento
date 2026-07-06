@@ -17,7 +17,7 @@ export async function GET(
   const { data: obra, error } = await supabase
     .from('obras')
     .select(`
-      codigo, nome,
+      codigo, nome, fee_fator, comissao_pct, imposto_pct,
       clientes (razao_social),
       grupos_orcamento (
         letra, ordem,
@@ -25,7 +25,7 @@ export async function GET(
         itens_orcamento (
           numero, descricao, local, ordem,
           quantidade, custo_unit_mao_obra, custo_unit_material,
-          margem_mao_obra_pct, margem_material_pct,
+          markup_mao_obra, markup_material,
           unidades_medida (sigla)
         )
       )
@@ -108,15 +108,15 @@ export async function GET(
           quantidade: Number(item.quantidade),
           custo_unit_mao_obra: Number(item.custo_unit_mao_obra),
           custo_unit_material: Number(item.custo_unit_material),
-          margem_mao_obra_pct: Number(item.margem_mao_obra_pct),
-          margem_material_pct: Number(item.margem_material_pct),
-        })
+          markup_mao_obra: Number(item.markup_mao_obra),
+          markup_material: Number(item.markup_material),
+        }, Number(obra.fee_fator))
         const sigla = (item.unidades_medida as unknown as { sigla: string } | null)?.sigla ?? ''
         const row = ws.addRow([
           grupo.letra, item.numero, item.descricao, item.local ?? '', sigla,
           Number(item.quantidade),
           calc.custo_unit_mao_obra, calc.custo_unit_material, calc.total_custo,
-          calc.margem_mao_obra_pct, calc.margem_material_pct,
+          calc.markup_mao_obra, calc.markup_material,
           calc.total_venda, calc.lucro, calc.margem_efetiva_pct,
         ])
         for (const col of [7, 8, 9, 12, 13]) { row.getCell(col).numFmt = fmtBRL; row.getCell(col).alignment = { horizontal: 'right' } }
@@ -196,9 +196,9 @@ export async function GET(
           quantidade: Number(item.quantidade),
           custo_unit_mao_obra: Number(item.custo_unit_mao_obra),
           custo_unit_material: Number(item.custo_unit_material),
-          margem_mao_obra_pct: Number(item.margem_mao_obra_pct),
-          margem_material_pct: Number(item.margem_material_pct),
-        })
+          markup_mao_obra: Number(item.markup_mao_obra),
+          markup_material: Number(item.markup_material),
+        }, Number(obra.fee_fator))
         const sigla = (item.unidades_medida as unknown as { sigla: string } | null)?.sigla ?? ''
         const row = ws.addRow([
           grupo.letra, item.numero, item.descricao, item.local ?? '', sigla,

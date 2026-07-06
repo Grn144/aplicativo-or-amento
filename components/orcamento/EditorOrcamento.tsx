@@ -18,6 +18,9 @@ type ObraParaEditor = {
   nome: string
   status: import('@/types/database').StatusObra
   data_orcamento: string | null
+  fee_fator?: number
+  comissao_pct?: number
+  imposto_pct?: number
   clientes: { id: string; razao_social: string } | null
   grupos_orcamento: GrupoComItens[]
 }
@@ -39,7 +42,8 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const [unidadesList, setUnidadesList] = useState(unidades)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
+  const feeFator = obra.fee_fator ?? 1.02
+  const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g, feeFator))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
 
   async function exportar(tipo: 'tecnico' | 'comercial') {

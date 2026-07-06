@@ -21,8 +21,8 @@ function obra(over: Partial<ObraDashboard> & { status?: StatusObra } = {}): Obra
     grupos_orcamento: [
       {
         itens_orcamento: [
-          // custo 100×10=1000; margem 50% MO → venda 1500
-          { quantidade: 10, custo_unit_mao_obra: 100, custo_unit_material: 0, margem_mao_obra_pct: 50, margem_material_pct: 0 },
+          // custo 100×10=1000; fee 1.02 → fee_unit 102; markup 1.5 MO → venda 1530
+          { quantidade: 10, custo_unit_mao_obra: 100, custo_unit_material: 0, markup_mao_obra: 1.5, markup_material: 1 },
         ],
       },
     ],
@@ -32,7 +32,7 @@ function obra(over: Partial<ObraDashboard> & { status?: StatusObra } = {}): Obra
 
 describe('totalVendaObra', () => {
   it('soma venda de todos os itens via calcularItem', () => {
-    expect(totalVendaObra(obra())).toBe(1500)
+    expect(totalVendaObra(obra())).toBe(1530)
   })
 })
 
@@ -74,8 +74,8 @@ describe('calcularDashboard', () => {
     expect(d.kpis.emAnalise.valor).toBe(1)
     expect(d.kpis.aprovados.valor).toBe(2)   // aprovado + em_execucao
     expect(d.kpis.cancelados.valor).toBe(1)
-    expect(d.kpis.valorOrcado.valor).toBe(6000)   // 4 × 1500
-    expect(d.kpis.valorAprovado.valor).toBe(3000) // 2 × 1500
+    expect(d.kpis.valorOrcado.valor).toBe(6120)   // 4 × 1530
+    expect(d.kpis.valorAprovado.valor).toBe(3060) // 2 × 1530
   })
 
   it('calcula variação vs período anterior e null quando base zero', () => {
@@ -98,23 +98,23 @@ describe('calcularDashboard', () => {
     )
     expect(d.orcamentosPorMes[0]).toEqual({ mes: 'Jan', quantidade: 2 })
     expect(d.orcamentosPorMes[5].quantidade).toBe(0) // obra de 2025 fora
-    expect(d.evolucaoFinanceira[0].orcado).toBe(3000)
+    expect(d.evolucaoFinanceira[0].orcado).toBe(3060)
     expect(d.evolucaoFinanceira[0].custo).toBe(2000)
   })
 
   it('indicadores: ticket médio, maior, conversão e margem', () => {
     const grande: ObraDashboard['grupos_orcamento'] = [
-      { itens_orcamento: [{ quantidade: 10, custo_unit_mao_obra: 200, custo_unit_material: 0, margem_mao_obra_pct: 50, margem_material_pct: 0 }] },
+      { itens_orcamento: [{ quantidade: 10, custo_unit_mao_obra: 200, custo_unit_material: 0, markup_mao_obra: 1.5, markup_material: 1 }] },
     ]
     const d = calcularDashboard(
       [obra({ status: 'enviado' }), obra({ status: 'aprovado', grupos_orcamento: grande })],
       INTERVALO_30D,
       AGORA
     )
-    expect(d.indicadores.ticketMedio).toBe(2250)      // (1500+3000)/2
-    expect(d.indicadores.maiorOrcamento).toBe(3000)
+    expect(d.indicadores.ticketMedio).toBe(2295)      // (1530+3060)/2
+    expect(d.indicadores.maiorOrcamento).toBe(3060)
     expect(d.indicadores.taxaConversao).toBeCloseTo(50) // 1 aprovado / (1 enviado + 1 aprovado)
-    expect(d.indicadores.margemMedia).toBeCloseTo(100 * 1500 / 4500) // Σlucro/Σvenda
+    expect(d.indicadores.margemMedia).toBeCloseTo(100 * 1590 / 4590) // Σlucro/Σvenda
   })
 
   it('tabela ordenada por data desc e top clientes por valor', () => {
@@ -131,8 +131,8 @@ describe('calcularDashboard', () => {
     expect(d.ultimosOrcamentos[0].data).toBe('2026-06-25')
     expect(d.ultimosOrcamentos.map(l => l.data)).toEqual(['2026-06-25', '2026-06-20', '2026-06-15', '2026-06-10'])
     expect(d.ultimosOrcamentos[2].cliente).toBe('—')
-    expect(d.topClientes[0]).toEqual({ nome: 'Beta', obras: 2, valor: 3000 })
-    expect(d.topClientes[1]).toEqual({ nome: 'ACME', obras: 1, valor: 1500 })
+    expect(d.topClientes[0]).toEqual({ nome: 'Beta', obras: 2, valor: 3060 })
+    expect(d.topClientes[1]).toEqual({ nome: 'ACME', obras: 1, valor: 1530 })
   })
 
   it('statusDistribuicao só inclui status presentes no período', () => {
