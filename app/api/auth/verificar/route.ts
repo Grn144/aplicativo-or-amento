@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { verificarRateLimit } from '@/lib/rate-limit'
 import { lerJson } from '@/lib/http'
+import { MFA_TTL_SEGUNDOS } from '@/lib/sessao'
 
 export async function POST(request: NextRequest) {
   const body = await lerJson<{ codigo?: string }>(request)
@@ -63,13 +64,14 @@ export async function POST(request: NextRequest) {
   await admin.from('mfa_pendente').delete().eq('user_id', user.id)
 
   const response = NextResponse.json({ ok: true })
-  // Session cookie: some quando o browser fechar, forçando novo login
+  // Expira por inatividade: o middleware renova o cookie a cada atividade.
+  // Após MFA_TTL_SEGUNDOS sem uso (ou ao reabrir o app depois disso), exige novo login.
   response.cookies.set('mfa_verificado', 'true', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    // sem maxAge → session cookie
+    maxAge: MFA_TTL_SEGUNDOS,
   })
   // Limpa o cookie de MFA em andamento
   response.cookies.delete('mfa_em_andamento')

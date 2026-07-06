@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { SessaoKeepAlive } from '@/components/layout/SessaoKeepAlive'
 import type { Papel } from '@/types/database'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-background">
+      <SessaoKeepAlive />
       <Sidebar
         usuario={{
           nome: usuario?.nome ?? 'Usuário',

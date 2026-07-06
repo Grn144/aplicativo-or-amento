@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { MFA_TTL_SEGUNDOS } from '@/lib/sessao'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -69,6 +70,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(
       new URL(user && mfaVerificado ? '/obras' : '/login', request.url)
     )
+  }
+
+  // Janela deslizante: renova o TTL do cookie de MFA a cada atividade de página.
+  // Sem atividade por MFA_TTL_SEGUNDOS, o cookie expira e o próximo acesso cai no login.
+  if (user && mfaVerificado) {
+    supabaseResponse.cookies.set('mfa_verificado', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: MFA_TTL_SEGUNDOS,
+    })
   }
 
   return supabaseResponse
