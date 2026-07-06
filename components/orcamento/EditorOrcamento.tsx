@@ -53,12 +53,17 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const rentabilidade = calcularRentabilidade(gruposCalculados, fatores)
 
   async function salvarFator(campo: 'fee_fator' | 'comissao_pct' | 'imposto_pct', valor: number) {
+    const snapshot = fatores
     setFatores(prev => ({ ...prev, [campo]: valor }))
-    await fetch(`/api/obras/${obra.id}`, {
+    const res = await fetch(`/api/obras/${obra.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ [campo]: valor }),
     })
+    if (!res.ok) {
+      setFatores(snapshot)
+      alert('Não foi possível salvar o fator. Tente novamente.')
+    }
   }
 
   async function exportar(tipo: 'tecnico' | 'comercial') {
