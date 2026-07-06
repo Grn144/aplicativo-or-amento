@@ -34,8 +34,9 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     obra.grupos_orcamento.map(g => ({ ...g, itens_orcamento: g.itens_orcamento ?? [] }))
   )
   const [exportando, setExportando] = useState<'tecnico' | 'comercial' | null>(null)
+  const [importando, setImportando] = useState(false)
+  const [disciplinasList, setDisciplinasList] = useState(disciplinas)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [importandoGrupoId, setImportandoGrupoId] = useState<string | null>(null)
 
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
@@ -58,41 +59,41 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     }
   }
 
-  function iniciarImport(grupoId: string) {
-    setImportandoGrupoId(grupoId)
-    fileInputRef.current?.click()
-  }
-
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file || !importandoGrupoId) return
+    if (!file) return
     e.target.value = ''
 
-    const grupoId = importandoGrupoId
-    setImportandoGrupoId(null)
-
-    const form = new FormData()
-    form.append('file', file)
-
-    const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/import`, {
-      method: 'POST',
-      body: form,
-    })
-    const data = await res.json()
-
-    if (!res.ok) {
-      alert(`Erro ao importar: ${data.error}`)
-      return
-    }
-
-    const itensImportados = data.itens as (ItemOrcamento & { unidades_medida?: UnidadeMedida | null })[]
-    setGrupos(prev => prev.map(g =>
-      g.id !== grupoId ? g : {
-        ...g,
-        itens_orcamento: [...g.itens_orcamento, ...itensImportados],
+    setImportando(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch(`/api/obras/${obra.id}/import`, { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(`Erro ao importar: ${data.error}`)
+        return
       }
-    ))
-    alert(`${data.importados} item(s) importado(s) com sucesso!`)
+      const gruposAtualizados = (data.grupos as GrupoComItens[]).map(g => ({
+        ...g,
+        itens_orcamento: g.itens_orcamento ?? [],
+      }))
+      setGrupos(gruposAtualizados)
+      // Mescla eventuais disciplinas novas na lista do datalist
+      const nomes = new Set(disciplinasList.map(d => d.id))
+      const novas = gruposAtualizados
+        .map(g => g.disciplinas)
+        .filter((d): d is NonNullable<typeof d> => !!d && !nomes.has(d.id))
+        .map(d => ({ id: d.id, nome: d.nome }))
+      if (novas.length > 0) {
+        setDisciplinasList(prev =>
+          [...prev, ...novas].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+        )
+      }
+      alert(`${data.itens} item(s) em ${data.disciplinas} disciplina(s) importados!`)
+    } finally {
+      setImportando(false)
+    }
   }
 
   async function atualizarItem(grupoId: string, itemId: string, campo: string, valor: unknown) {
@@ -113,15 +114,26 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     if (!res.ok) setGrupos(snapshot)
   }
 
-  async function adicionarGrupo(disciplina_id: string) {
+  async function adicionarDisciplina(nome: string) {
     const res = await fetch(`/api/obras/${obra.id}/grupos`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ disciplina_id }),
+      body: JSON.stringify({ disciplina_nome: nome }),
     })
-    if (!res.ok) return
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(`Erro ao adicionar disciplina: ${data.error ?? 'tente novamente'}`)
+      return
+    }
     const novoGrupo = await res.json()
     setGrupos(prev => [...prev, { ...novoGrupo, itens_orcamento: novoGrupo.itens_orcamento ?? [] }])
+    // Registra a disciplina no datalist se for nova
+    const d = novoGrupo.disciplinas as { id: string; nome: string } | null
+    if (d && !disciplinasList.some(x => x.id === d.id)) {
+      setDisciplinasList(prev =>
+        [...prev, { id: d.id, nome: d.nome }].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+      )
+    }
   }
 
   async function removerGrupo(grupoId: string) {
@@ -176,6 +188,13 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         <h2 className="text-base font-semibold">Orçamento</h2>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importando}
+            className="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          >
+            {importando ? 'Importando...' : '↑ Importar Planilha'}
+          </button>
+          <button
             onClick={() => exportar('tecnico')}
             disabled={exportando !== null}
             className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
@@ -197,14 +216,13 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         totais={totais}
         visao="tecnica"
         obraId={obra.id}
-        disciplinas={disciplinas}
+        disciplinas={disciplinasList}
         unidades={unidades}
         onUpdateItem={atualizarItem}
-        onAddGrupo={adicionarGrupo}
+        onAddDisciplina={adicionarDisciplina}
         onRemoveGrupo={removerGrupo}
         onAddItem={adicionarItem}
         onRemoveItem={removerItem}
-        onImportItens={iniciarImport}
       />
     </div>
   )

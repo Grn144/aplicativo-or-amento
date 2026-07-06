@@ -20,11 +20,10 @@ interface Props {
   disciplinas: Pick<Disciplina, 'id' | 'nome'>[]
   unidades: Pick<UnidadeMedida, 'id' | 'sigla'>[]
   onUpdateItem: (grupoId: string, itemId: string, campo: string, valor: unknown) => Promise<void>
-  onAddGrupo: (disciplina_id: string) => Promise<void>
+  onAddDisciplina: (nome: string) => Promise<void>
   onRemoveGrupo: (grupoId: string) => Promise<void>
   onAddItem: (grupoId: string) => Promise<void>
   onRemoveItem: (grupoId: string, itemId: string) => Promise<void>
-  onImportItens: (grupoId: string) => void
 }
 
 function CelulaEditavel({
@@ -94,20 +93,20 @@ export default function TabelaOrcamento({
   disciplinas,
   unidades,
   onUpdateItem,
-  onAddGrupo,
+  onAddDisciplina,
   onRemoveGrupo,
   onAddItem,
   onRemoveItem,
-  onImportItens,
 }: Props) {
-  const [adicionandoGrupo, setAdicionandoGrupo] = useState(false)
-  const [disciplinaSelecionada, setDisciplinaSelecionada] = useState('')
+  const [adicionandoDisciplina, setAdicionandoDisciplina] = useState(false)
+  const [nomeDisciplina, setNomeDisciplina] = useState('')
 
-  async function confirmarAdicionarGrupo() {
-    if (!disciplinaSelecionada) return
-    await onAddGrupo(disciplinaSelecionada)
-    setAdicionandoGrupo(false)
-    setDisciplinaSelecionada('')
+  async function confirmarAdicionarDisciplina() {
+    const nome = nomeDisciplina.trim()
+    if (!nome) return
+    await onAddDisciplina(nome)
+    setAdicionandoDisciplina(false)
+    setNomeDisciplina('')
   }
 
   const colsComercial = 11
@@ -157,7 +156,7 @@ export default function TabelaOrcamento({
                       <button
                         onClick={() => onRemoveGrupo(grupo.id)}
                         className="text-red-400 hover:text-red-600 font-bold"
-                        title="Remover grupo"
+                        title="Remover disciplina"
                       >
                         ×
                       </button>
@@ -234,12 +233,6 @@ export default function TabelaOrcamento({
                         >
                           + Adicionar item
                         </button>
-                        <button
-                          onClick={() => onImportItens(grupo.id)}
-                          className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
-                        >
-                          ↑ Importar planilha
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -260,26 +253,30 @@ export default function TabelaOrcamento({
 
         {/* Adicionar grupo */}
         <div className="flex items-center gap-2">
-          {adicionandoGrupo ? (
+          {adicionandoDisciplina ? (
             <>
-              <Select value={disciplinaSelecionada} onValueChange={v => setDisciplinaSelecionada(v ?? '')}>
-                <SelectTrigger className="w-56 h-8 text-sm">
-                  <SelectValue placeholder="Selecionar disciplina..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {disciplinas.map(d => (
-                    <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <input
+                list="lista-disciplinas"
+                value={nomeDisciplina}
+                onChange={e => setNomeDisciplina(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') confirmarAdicionarDisciplina() }}
+                placeholder="Digite ou escolha a disciplina..."
+                autoFocus
+                className="w-56 h-8 rounded border border-input bg-background px-2 text-sm"
+              />
+              <datalist id="lista-disciplinas">
+                {disciplinas.map(d => (
+                  <option key={d.id} value={d.nome} />
+                ))}
+              </datalist>
               <button
-                onClick={confirmarAdicionarGrupo}
+                onClick={confirmarAdicionarDisciplina}
                 className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Confirmar
               </button>
               <button
-                onClick={() => { setAdicionandoGrupo(false); setDisciplinaSelecionada('') }}
+                onClick={() => { setAdicionandoDisciplina(false); setNomeDisciplina('') }}
                 className="text-sm px-3 py-1 bg-muted text-muted-foreground rounded hover:bg-muted"
               >
                 Cancelar
@@ -287,10 +284,10 @@ export default function TabelaOrcamento({
             </>
           ) : (
             <button
-              onClick={() => setAdicionandoGrupo(true)}
+              onClick={() => setAdicionandoDisciplina(true)}
               className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
             >
-              + Adicionar grupo
+              + Adicionar disciplina
             </button>
           )}
         </div>
@@ -449,12 +446,6 @@ export default function TabelaOrcamento({
                       >
                         + Adicionar item
                       </button>
-                      <button
-                        onClick={() => onImportItens(grupo.id)}
-                        className="text-xs text-emerald-600 hover:text-emerald-800 font-medium"
-                      >
-                        ↑ Importar planilha
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -475,28 +466,32 @@ export default function TabelaOrcamento({
         </table>
       </div>
 
-      {/* Adicionar grupo */}
+      {/* Adicionar disciplina */}
       <div className="flex items-center gap-2">
-        {adicionandoGrupo ? (
+        {adicionandoDisciplina ? (
           <>
-            <Select value={disciplinaSelecionada} onValueChange={v => setDisciplinaSelecionada(v ?? '')}>
-              <SelectTrigger className="w-56 h-8 text-sm">
-                <SelectValue placeholder="Selecionar disciplina..." />
-              </SelectTrigger>
-              <SelectContent>
-                {disciplinas.map(d => (
-                  <SelectItem key={d.id} value={d.id}>{d.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <input
+              list="lista-disciplinas"
+              value={nomeDisciplina}
+              onChange={e => setNomeDisciplina(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarAdicionarDisciplina() }}
+              placeholder="Digite ou escolha a disciplina..."
+              autoFocus
+              className="w-56 h-8 rounded border border-input bg-background px-2 text-sm"
+            />
+            <datalist id="lista-disciplinas">
+              {disciplinas.map(d => (
+                <option key={d.id} value={d.nome} />
+              ))}
+            </datalist>
             <button
-              onClick={confirmarAdicionarGrupo}
+              onClick={confirmarAdicionarDisciplina}
               className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
               Confirmar
             </button>
             <button
-              onClick={() => { setAdicionandoGrupo(false); setDisciplinaSelecionada('') }}
+              onClick={() => { setAdicionandoDisciplina(false); setNomeDisciplina('') }}
               className="text-sm px-3 py-1 bg-muted text-muted-foreground rounded hover:bg-muted"
             >
               Cancelar
@@ -504,10 +499,10 @@ export default function TabelaOrcamento({
           </>
         ) : (
           <button
-            onClick={() => setAdicionandoGrupo(true)}
+            onClick={() => setAdicionandoDisciplina(true)}
             className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
           >
-            + Adicionar grupo
+            + Adicionar disciplina
           </button>
         )}
       </div>

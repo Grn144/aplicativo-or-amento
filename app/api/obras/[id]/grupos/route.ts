@@ -11,12 +11,29 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id: obra_id } = await params
-  const body = await lerJson<{ disciplina_id?: string }>(request)
+  const body = await lerJson<{ disciplina_id?: string; disciplina_nome?: string }>(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
-  const { disciplina_id } = body
+
+  // Aceita uma disciplina existente (id) ou um nome digitado (cria se não existir)
+  let disciplina_id = body.disciplina_id
+  const nome = body.disciplina_nome?.trim()
+  if (!disciplina_id && nome) {
+    const { data: existente } = await supabase
+      .from('disciplinas').select('id').ilike('nome', nome).maybeSingle()
+    if (existente) {
+      disciplina_id = existente.id
+    } else {
+      const { data: nova, error: errDisc } = await supabase
+        .from('disciplinas').insert({ nome }).select('id').single()
+      if (errDisc || !nova) {
+        return NextResponse.json({ error: 'Falha ao criar disciplina' }, { status: 500 })
+      }
+      disciplina_id = nova.id
+    }
+  }
 
   if (!disciplina_id) {
-    return NextResponse.json({ error: 'disciplina_id é obrigatório' }, { status: 400 })
+    return NextResponse.json({ error: 'Informe a disciplina' }, { status: 400 })
   }
 
   // Próxima letra e ordem
