@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { verificarRateLimit } from '@/lib/rate-limit'
+import { lerJson } from '@/lib/http'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: NextRequest) {
-  const { email } = await request.json()
+  const body = await lerJson<{ email?: string }>(request)
+  if (!body) {
+    return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
+  }
+  const { email } = body
 
   if (!email) {
     return NextResponse.json({ error: 'Email obrigatório' }, { status: 400 })

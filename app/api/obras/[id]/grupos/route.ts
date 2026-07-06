@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { lerJson } from '@/lib/http'
 
 export async function POST(
   request: NextRequest,
@@ -10,7 +11,8 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id: obra_id } = await params
-  const body = await request.json()
+  const body = await lerJson<{ disciplina_id?: string }>(request)
+  if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
   const { disciplina_id } = body
 
   if (!disciplina_id) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { lerJson } from '@/lib/http'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -41,7 +42,13 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const body = await request.json()
+  const body = await lerJson<{
+    codigo?: string
+    nome?: string
+    cliente_id?: string | null
+    data_orcamento?: string | null
+  }>(request)
+  if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
   const { codigo, nome, cliente_id, data_orcamento } = body
 
   if (!codigo?.trim() || !nome?.trim()) {

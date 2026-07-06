@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomInt } from 'crypto'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { verificarRateLimit } from '@/lib/rate-limit'
+import { lerJson } from '@/lib/http'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -11,7 +12,11 @@ function gerarCodigo(): string {
 }
 
 export async function POST(request: NextRequest) {
-  const { email, password } = await request.json()
+  const body = await lerJson<{ email?: string; password?: string }>(request)
+  if (!body) {
+    return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
+  }
+  const { email, password } = body
 
   if (!email || !password) {
     return NextResponse.json({ error: 'Email e senha obrigatórios' }, { status: 400 })

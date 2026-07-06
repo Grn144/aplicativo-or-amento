@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { lerJson } from '@/lib/http'
 
 export async function GET(
   _request: NextRequest,
@@ -54,7 +55,8 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id } = await params
-  const body = await request.json()
+  const body = await lerJson(request)
+  if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
   // Campos permitidos para atualização do cabeçalho
   const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status'] as const

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { lerJson } from '@/lib/http'
 
 export async function PUT(
   request: NextRequest,
@@ -10,7 +11,8 @@ export async function PUT(
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { itemId } = await params
-  const body = await request.json()
+  const body = await lerJson(request)
+  if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
   const campos = [
     'descricao', 'local', 'unidade_id', 'quantidade',

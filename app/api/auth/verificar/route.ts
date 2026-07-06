@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { verificarRateLimit } from '@/lib/rate-limit'
+import { lerJson } from '@/lib/http'
 
 export async function POST(request: NextRequest) {
-  const { codigo } = await request.json()
+  const body = await lerJson<{ codigo?: string }>(request)
+  if (!body) {
+    return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
+  }
+  const { codigo } = body
 
   if (!codigo) {
     return NextResponse.json({ error: 'Código obrigatório' }, { status: 400 })
