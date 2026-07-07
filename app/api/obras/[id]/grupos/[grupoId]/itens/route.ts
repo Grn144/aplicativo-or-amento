@@ -35,8 +35,6 @@ export async function POST(
       quantidade: body.quantidade ?? 0,
       custo_unit_mao_obra: body.custo_unit_mao_obra ?? 0,
       custo_unit_material: body.custo_unit_material ?? 0,
-      margem_mao_obra_pct: body.margem_mao_obra_pct ?? 0,
-      margem_material_pct: body.margem_material_pct ?? 0,
       observacao: body.observacao ?? null,
       observacao_2: body.observacao_2 ?? null,
     })

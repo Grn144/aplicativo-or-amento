@@ -105,7 +105,7 @@ export default function TabelaOrcamento({
   }
 
   const colsComercial = 11
-  const colsTecnica = 14
+  const colsTecnica = 20
 
   if (visao === 'comercial') {
     return (
@@ -308,12 +308,18 @@ export default function TabelaOrcamento({
               <th className="px-2 py-2 text-left font-medium border-b border-border w-28">Local</th>
               <th className="px-2 py-2 text-center font-medium border-b border-border w-16">UN</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">QT</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo MO</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Custo Mat.</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">M. OBRA</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">MAT</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Custo</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup MO</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup M.Obra</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup Mat.</th>
-              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Venda</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">FEE M.OBRA</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">$ M.OBRA</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">FEE MAT</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">$ MAT</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-24">SUB TOTAL M.OBRA</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-24">SUB TOTAL MAT</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-22">TOTAL</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Lucro</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Mg. Ef%</th>
               <th className="px-2 py-2 border-b border-border w-8" />
@@ -332,7 +338,13 @@ export default function TabelaOrcamento({
                   <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.total_custo)}
                   </td>
-                  <td colSpan={2} className="border-b border-border" />
+                  <td colSpan={6} className="border-b border-border" />
+                  <td className="px-2 py-1.5 text-right border-b border-border font-mono">
+                    {fmt(grupo.totais.subtotal_mao_obra_venda)}
+                  </td>
+                  <td className="px-2 py-1.5 text-right border-b border-border font-mono">
+                    {fmt(grupo.totais.subtotal_material_venda)}
+                  </td>
                   <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.total_venda)}
                   </td>
@@ -413,7 +425,7 @@ export default function TabelaOrcamento({
                         valor={item.markup_mao_obra}
                         tipo="number"
                         className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_mao_obra', parseFloat(v) || 0)}
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_mao_obra', parseFloat(v) || 1)}
                       />
                     </td>
                     <td className="px-2 py-1">
@@ -421,9 +433,23 @@ export default function TabelaOrcamento({
                         valor={item.markup_material}
                         tipo="number"
                         className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 0)}
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 1)}
                       />
                     </td>
+                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                      {fmt(item.fee_unit_mao_obra)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                      {fmt(item.preco_unit_mao_obra_venda)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                      {fmt(item.fee_unit_material)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                      {fmt(item.preco_unit_material_venda)}
+                    </td>
+                    <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
+                    <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_material_venda)}</td>
                     <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
                     <td className="px-2 py-1 text-right font-mono">{fmt(item.lucro)}</td>
                     <td className="px-2 py-1 text-right font-mono">{fmtPct(item.margem_efetiva_pct)}</td>
@@ -456,7 +482,9 @@ export default function TabelaOrcamento({
             <tr>
               <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_custo)}</td>
-              <td colSpan={2} />
+              <td colSpan={6} />
+              <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_mao_obra_venda)}</td>
+              <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_material_venda)}</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_venda)}</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.lucro)}</td>
               <td className="px-2 py-2 text-right font-mono">{fmtPct(totais.margem_efetiva_pct)}</td>
