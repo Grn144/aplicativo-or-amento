@@ -161,7 +161,7 @@ export async function GET(
       gr.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.font = { bold: true }
         cell.fill = groupFill
-        if ([10, 11, 12, 20, 21, 22].includes(col)) { cell.numFmt = fmtBRL; cell.alignment = { horizontal: 'right' } }
+        if ([10, 11, 12, 21, 22, 23].includes(col)) { cell.numFmt = fmtBRL; cell.alignment = { horizontal: 'right' } }
       })
 
       totalCustoGeral += totaisGrupo.total_custo
