@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,6 +87,8 @@ export default function ObrasPage() {
   const [novaObra, setNovaObra] = useState({ codigo: '', nome: '', cliente_id: '', data_orcamento: '' })
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const [importando, setImportando] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const searchParams = useSearchParams()
 
@@ -147,12 +149,51 @@ export default function ObrasPage() {
     router.push(`/obras/${data.id}`)
   }
 
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setImportando(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/obras/import', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(`Erro ao importar: ${data.error}`)
+        return
+      }
+      router.push(`/obras/${data.id}`)
+    } finally {
+      setImportando(false)
+    }
+  }
+
   return (
     <div className="p-6">
+      {/* Input oculto para importação de planilha */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.csv"
+        className="hidden"
+        onChange={handleImportFile}
+      />
+
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Obras</h1>
-        <Button onClick={abrirModal}>+ Nova obra</Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importando}
+          >
+            {importando ? 'Importando...' : '↑ Importar planilha'}
+          </Button>
+          <Button onClick={abrirModal}>+ Nova obra</Button>
+        </div>
       </div>
 
       {/* Filtros */}
