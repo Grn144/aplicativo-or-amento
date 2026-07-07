@@ -75,6 +75,27 @@ describe('parsePlanilhaObra — cabeçalho em DUAS linhas (planilha real da empr
   })
 })
 
+describe('parsePlanilhaObra — markup relativo a custo×1.02 (FEE da planilha pode variar)', () => {
+  it('deriva markup para reproduzir o $ da venda quando o FEE não é custo×1.02', () => {
+    // Alguns itens têm o FEE lançado como custo×1.0 (não ×1.02). O app recalcula
+    // venda = custo×1.02×markup, então o markup precisa ser $ / (custo×1.02) para
+    // reproduzir o $ da planilha exatamente — e não $ / FEE.
+    const linhaFee: Celula[] = []
+    linhaFee[12] = 'FEE M.OBRA'; linhaFee[13] = '$ M.OBRA'; linhaFee[14] = 'FEE MAT'; linhaFee[15] = '$ MAT'
+    const headerPrincipal: Celula[] = ['ITEM','Nº','DESCRIÇÃO','DISCIPLINA','LOCAL','UN.','QT.','M. OBRA','MAT','M. OBRA','MAT','TOTAL']
+    const disc: Celula[] = ['A','','CIVIL']
+    // custo MO=350; FEE na planilha=350 (×1.0); $ M.OBRA=577.5
+    const it: Celula[] = ['A',1,'X','CIVIL','L','VB',1,350,0,350,0,350]
+    it[12] = 350; it[13] = 577.5; it[14] = 0; it[15] = 0
+
+    const r = parsePlanilhaObra([...cab, linhaFee, headerPrincipal, disc, it])
+    const item0 = r[0].itens[0]
+    expect(item0.markup_mao_obra).toBeCloseTo(577.5 / (350 * 1.02), 4) // 1.6176
+    // e o recálculo do app (custo×1.02×markup) reproduz o $ da planilha:
+    expect(350 * 1.02 * item0.markup_mao_obra).toBeCloseTo(577.5, 2)
+  })
+})
+
 describe('resolverCelula (célula de fórmula do exceljs)', () => {
   it('extrai o resultado de uma célula de fórmula', () => {
     expect(resolverCelula({ formula: 'H10*1.02', result: 204 })).toBe(204)

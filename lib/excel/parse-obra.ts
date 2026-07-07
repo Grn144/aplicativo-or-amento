@@ -121,7 +121,7 @@ function classificarColunaVendaFee(headerNormalizado: string): Campo | null {
   return null
 }
 
-export function parsePlanilhaObra(linhas: Celula[][]): DisciplinaImportada[] {
+export function parsePlanilhaObra(linhas: Celula[][], feeFator = 1.02): DisciplinaImportada[] {
   // 1. Detecta a linha de cabeçalho (a que mapeia mais colunas conhecidas,
   // incluindo as colunas de venda/fee classificadas por regex).
   let headerIdx = -1
@@ -190,19 +190,22 @@ export function parsePlanilhaObra(linhas: Celula[][]): DisciplinaImportada[] {
       resultado.push(atual)
     }
     const un = texto(val(linha, 'unidade'))
-    const feeMO = numero(val(linha, 'fee_mao_obra'))
+    const custoMO = numero(val(linha, 'custo_unit_mao_obra'))
+    const custoMAT = numero(val(linha, 'custo_unit_material'))
     const vendaMO = numero(val(linha, 'venda_mao_obra'))
-    const feeMAT = numero(val(linha, 'fee_material'))
     const vendaMAT = numero(val(linha, 'venda_material'))
+    // Markup relativo ao FEE que o app aplica (custo × feeFator), e NÃO ao FEE
+    // da planilha: alguns itens têm o FEE lançado com fator diferente (ex.: ×1.0).
+    // Assim o app reproduz o $ da venda exatamente ao recalcular custo×feeFator×markup.
     atual.itens.push({
       descricao: desc,
       local: texto(val(linha, 'local')) || null,
       unidade: un || null,
       quantidade: numero(val(linha, 'quantidade')) || 1,
-      custo_unit_mao_obra: numero(val(linha, 'custo_unit_mao_obra')),
-      custo_unit_material: numero(val(linha, 'custo_unit_material')),
-      markup_mao_obra: feeMO > 0 ? vendaMO / feeMO : 1,
-      markup_material: feeMAT > 0 ? vendaMAT / feeMAT : 1,
+      custo_unit_mao_obra: custoMO,
+      custo_unit_material: custoMAT,
+      markup_mao_obra: custoMO > 0 ? vendaMO / (custoMO * feeFator) : 1,
+      markup_material: custoMAT > 0 ? vendaMAT / (custoMAT * feeFator) : 1,
       observacao: texto(val(linha, 'observacao')) || null,
     })
   }
