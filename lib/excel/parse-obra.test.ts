@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parsePlanilhaObra, parseCabecalhoObra } from './parse-obra'
+import { parsePlanilhaObra, parseCabecalhoObra, resolverCelula, type Celula } from './parse-obra'
 
 // Layout real (colunas do bloco custo/fee): ITEM Nº DESCRIÇÃO DISCIPLINA LOCAL UN. QT.
 // M.OBRA MAT SUBTOT-MO SUBTOT-MAT TOTAL FEE-M.OBRA $-M.OBRA FEE-MAT $-MAT ...
@@ -47,6 +47,46 @@ describe('parsePlanilhaObra (round-trip com o layout gerado pelo export técnico
     expect(r[0].disciplina).not.toBe('GERAL')
     expect(r[0].itens).toHaveLength(1)
     expect(r[0].itens[0].descricao).toBe('PROTEÇÃO')
+  })
+})
+
+describe('parsePlanilhaObra — cabeçalho em DUAS linhas (planilha real da empresa)', () => {
+  it('acha FEE/$ na linha acima do cabeçalho principal e deriva markup', () => {
+    // Rótulos FEE/$ ficam nas colunas 12-15 de uma linha ACIMA do cabeçalho principal.
+    const linhaFeeLabels: Celula[] = []
+    linhaFeeLabels[12] = 'FEE M.OBRA'
+    linhaFeeLabels[13] = '$ M.OBRA'
+    linhaFeeLabels[14] = 'FEE MAT'
+    linhaFeeLabels[15] = '$ MAT'
+    // Cabeçalho principal SEM as colunas de fee/$ (elas estão na linha acima)
+    const headerPrincipal: Celula[] = ['ITEM','Nº','DESCRIÇÃO','DISCIPLINA','LOCAL','UN.','QT.','M. OBRA','MAT','M. OBRA','MAT','TOTAL']
+    const disc: Celula[] = ['A','','CIVIL']
+    // custo 200/100 (cols 7/8); FEE/$ (cols 12-15) = 204/510/102/204
+    const it: Celula[] = ['A',1,'PAREDE','CIVIL','GERAL','M2',35,200,100,200,100,300]
+    it[12] = 204; it[13] = 510; it[14] = 102; it[15] = 204
+
+    const r = parsePlanilhaObra([...cab, linhaFeeLabels, headerPrincipal, disc, it])
+    expect(r).toHaveLength(1)
+    expect(r[0].disciplina).toBe('CIVIL')
+    const item0 = r[0].itens[0]
+    expect(item0.custo_unit_mao_obra).toBe(200)
+    expect(item0.markup_mao_obra).toBeCloseTo(2.5)  // 510/204
+    expect(item0.markup_material).toBeCloseTo(2)     // 204/102
+  })
+})
+
+describe('resolverCelula (célula de fórmula do exceljs)', () => {
+  it('extrai o resultado de uma célula de fórmula', () => {
+    expect(resolverCelula({ formula: 'H10*1.02', result: 204 })).toBe(204)
+  })
+  it('extrai o texto de richText', () => {
+    expect(resolverCelula({ richText: [{ text: 'MAGA' }, { text: 'LU' }] })).toBe('MAGALU')
+  })
+  it('deixa valores primitivos intactos', () => {
+    expect(resolverCelula(200)).toBe(200)
+    expect(resolverCelula('CIVIL')).toBe('CIVIL')
+    expect(resolverCelula(null)).toBe(null)
+    expect(resolverCelula(undefined)).toBe(undefined)
   })
 })
 

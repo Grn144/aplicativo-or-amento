@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { parsePlanilhaObra, parseCabecalhoObra, type Celula } from '@/lib/excel/parse-obra'
+import { parsePlanilhaObra, parseCabecalhoObra, resolverCelula, type Celula } from '@/lib/excel/parse-obra'
 import { inserirConteudoObra } from '@/lib/excel/importar-obra'
 import ExcelJS from 'exceljs'
 
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
   // Worksheet → matriz de células (coluna 1 do exceljs = índice 1; normalizamos para 0)
   const linhas: Celula[][] = []
   ws.eachRow({ includeEmpty: true }, row => {
-    const vals = row.values as Celula[]
-    linhas.push(vals.slice(1))
+    const vals = row.values as unknown[]
+    linhas.push(vals.slice(1).map(resolverCelula))
   })
 
   const cabecalho = parseCabecalhoObra(linhas)

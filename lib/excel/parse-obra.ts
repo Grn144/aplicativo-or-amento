@@ -75,6 +75,26 @@ function normalizar(v: Celula): string {
     .trim()
 }
 
+/**
+ * Resolve uma célula do exceljs para um valor primitivo. Células de fórmula
+ * vêm como `{ formula, result }` e células formatadas como `{ richText }` ou
+ * `{ text }`; sem isto, valores calculados (FEE, $, subtotais) chegariam como
+ * "[object Object]" e o markup não seria derivado. Deve ser aplicado ao montar
+ * a matriz a partir do worksheet, antes de passar ao parser.
+ */
+export function resolverCelula(v: unknown): Celula {
+  if (v === null || v === undefined) return v as Celula
+  if (typeof v === 'object') {
+    const o = v as { result?: unknown; text?: unknown; richText?: { text?: string }[] }
+    if (o.result !== undefined) return resolverCelula(o.result)
+    if (Array.isArray(o.richText)) return o.richText.map(t => t?.text ?? '').join('')
+    if (o.text !== undefined) return String(o.text)
+    return null
+  }
+  if (typeof v === 'number' || typeof v === 'string') return v
+  return String(v)
+}
+
 function texto(v: Celula): string {
   return String(v ?? '').trim()
 }
@@ -119,6 +139,19 @@ export function parsePlanilhaObra(linhas: Celula[][]): DisciplinaImportada[] {
     }
   }
   if (headerIdx === -1 || !Object.values(melhorMapa).includes('descricao')) return []
+
+  // Cabeçalho em DUAS linhas: na planilha real, os rótulos "FEE M.OBRA", "$ M.OBRA",
+  // "FEE MAT", "$ MAT" ficam na linha imediatamente acima (ou abaixo) do cabeçalho
+  // principal (ITEM/DESCRIÇÃO/M.OBRA/MAT). Mescla as colunas de venda/fee dessas
+  // linhas vizinhas que ainda não foram mapeadas — sem elas, o markup não deriva.
+  for (const vizinho of [headerIdx - 1, headerIdx + 1]) {
+    if (vizinho < 0 || vizinho >= linhas.length) continue
+    linhas[vizinho].forEach((cel, col) => {
+      if (melhorMapa[col]) return
+      const campo = classificarColunaVendaFee(normalizar(cel))
+      if (campo) melhorMapa[col] = campo
+    })
+  }
 
   const colDe = (campo: Campo): number =>
     Number(Object.keys(melhorMapa).find(k => melhorMapa[Number(k)] === campo) ?? -1)
