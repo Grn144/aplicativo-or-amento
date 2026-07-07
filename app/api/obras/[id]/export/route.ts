@@ -152,7 +152,7 @@ export async function GET(
       const totaisGrupo = gruposCalculados[idx].totais
 
       const gr = ws.addRow([
-        `${grupo.letra} ${disc.toUpperCase()}`, '', '', '', '', '', '',
+        grupo.letra, '', disc.toUpperCase(), '', '', '', '',
         '', '', totaisGrupo.subtotal_mao_obra_custo, totaisGrupo.subtotal_material_custo, totaisGrupo.total_custo,
         '', '', '', '',
         '', '', '', '', totaisGrupo.subtotal_mao_obra_venda, totaisGrupo.subtotal_material_venda, totaisGrupo.total_venda,

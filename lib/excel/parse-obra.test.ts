@@ -35,6 +35,21 @@ describe('parsePlanilhaObra (formato real, deriva markup)', () => {
   })
 })
 
+describe('parsePlanilhaObra (round-trip com o layout gerado pelo export técnico)', () => {
+  it('linha de disciplina com letra na coluna 0 e nome na coluna 2 (DESCRIÇÃO) não vira "GERAL"', () => {
+    // Layout que o export técnico gera para a linha de grupo/disciplina:
+    // coluna 0 = letra do grupo, coluna 1 (Nº) = vazia, coluna 2 (DESCRIÇÃO) = nome em maiúsculas.
+    const grupoExport = ['A', '', 'CIVIL']
+    const itemExport = ['A', 1, 'PROTEÇÃO', 'CIVIL', 'GERAL', 'VB', 1, 200, 100, 200, 100, 300, 204, 510, 102, 204]
+    const r = parsePlanilhaObra([...cab, header, grupoExport, itemExport])
+    expect(r).toHaveLength(1)
+    expect(r[0].disciplina).toBe('CIVIL')
+    expect(r[0].disciplina).not.toBe('GERAL')
+    expect(r[0].itens).toHaveLength(1)
+    expect(r[0].itens[0].descricao).toBe('PROTEÇÃO')
+  })
+})
+
 describe('parseCabecalhoObra (formato real)', () => {
   it('extrai codigo, nome, cliente, endereco e cnpj', () => {
     expect(parseCabecalhoObra([...cab, header])).toEqual({

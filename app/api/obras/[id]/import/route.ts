@@ -23,8 +23,16 @@ export async function POST(
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const wb = new ExcelJS.Workbook()
-  await wb.xlsx.load(buffer as unknown as Parameters<typeof wb.xlsx.load>[0])
-  const ws = wb.worksheets[0]
+  let ws: ExcelJS.Worksheet | undefined
+  try {
+    await wb.xlsx.load(buffer as unknown as Parameters<typeof wb.xlsx.load>[0])
+    ws = wb.worksheets[0]
+  } catch {
+    return NextResponse.json(
+      { error: 'Arquivo inválido. Envie uma planilha .xlsx exportada pelo sistema.' },
+      { status: 400 }
+    )
+  }
   if (!ws) return NextResponse.json({ error: 'Planilha vazia ou inválida' }, { status: 400 })
 
   // Worksheet → matriz de células (coluna 1 do exceljs = índice 1; normalizamos para 0)
