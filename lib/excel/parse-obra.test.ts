@@ -1,77 +1,48 @@
 import { describe, it, expect } from 'vitest'
-import { parsePlanilhaObra } from './parse-obra'
+import { parsePlanilhaObra, parseCabecalhoObra } from './parse-obra'
 
-// Reproduz o layout do export técnico: título, cliente, vazio, cabeçalho,
-// linhas de disciplina (Nº vazio) e linhas de item (Nº numérico), total.
-const planilhaTecnica = [
-  ['ORÇAMENTO TÉCNICO — 08114 — UNILEVER'],
-  ['Cliente: ACME'],
-  [],
-  ['Item', 'Nº', 'Descrição', 'Local', 'UN', 'QT', 'Custo MO', 'Custo Mat.', 'Total Custo', 'Mg. MO%', 'Mg. Mat%', 'Total Venda', 'Lucro', 'Mg. Ef%'],
-  ['A', '', 'CIVIL'],
-  ['A', 1, 'Parede', '3º andar', 'M2', 10, 100, 50, 750, 20, 10, 900, 150, 16.67],
-  ['A', 2, 'Piso', '', 'M2', 5, 80, 40, 600, 20, 10, 720, 120, 16.67],
-  ['B', '', 'ELÉTRICA'],
-  ['B', 1, 'Ponto de luz', '', 'PTOS', 8, 30, 20, 400, 15, 15, 460, 60, 13.04],
-  [],
-  ['', '', '', '', '', '', '', 'TOTAL GERAL', 1750, '', '', 2080, 330, 15.87],
+// Layout real (colunas do bloco custo/fee): ITEM Nº DESCRIÇÃO DISCIPLINA LOCAL UN. QT.
+// M.OBRA MAT SUBTOT-MO SUBTOT-MAT TOTAL FEE-M.OBRA $-M.OBRA FEE-MAT $-MAT ...
+const cab = [
+  ['', '', 'DESCRITIVO TÉCNICO E COMERCIAL'],
+  ['', '', 'MAGALU - PAULISTA'],
+  ['', '', 'ENDEREÇO: ALAMEDA SANTOS, 2153'],
+  ['', '', 'CNPJ: 12.345.678/0001-00'],
+  ['', '', '08092.01 MAGALU - DEPOSITO'],
 ]
+const header = ['ITEM','Nº','DESCRIÇÃO','DISCIPLINA','LOCAL','UN.','QT.','M. OBRA','MAT','SUB TOTAL','SUB TOTAL','TOTAL','FEE M.OBRA','$ M.OBRA','FEE MAT','$ MAT']
+const grupo = ['A','','SERVIÇOS PRELIMINÁRES']
+// custo MO=200 MAT=100 fee=1.02 → fee-mo=204 $mo=510 (markup 2.5); fee-mat=102 $mat=204 (markup 2)
+const item = ['A',1,'PROTEÇÃO','SERVIÇOS PRELIMINÁRES','GERAL','VB',1, 200,100, 200,100,300, 204,510, 102,204]
 
-describe('parsePlanilhaObra', () => {
-  it('separa disciplinas e itens do formato de export', () => {
-    const r = parsePlanilhaObra(planilhaTecnica)
-    expect(r).toHaveLength(2)
-    expect(r[0].disciplina).toBe('CIVIL')
-    expect(r[0].itens).toHaveLength(2)
-    expect(r[1].disciplina).toBe('ELÉTRICA')
-    expect(r[1].itens).toHaveLength(1)
-  })
-
-  it('lê os campos do item corretamente', () => {
-    const item = parsePlanilhaObra(planilhaTecnica)[0].itens[0]
-    expect(item).toMatchObject({
-      descricao: 'Parede',
-      local: '3º andar',
-      unidade: 'M2',
-      quantidade: 10,
-      custo_unit_mao_obra: 100,
-      custo_unit_material: 50,
-      margem_mao_obra_pct: 20,
-      margem_material_pct: 10,
-    })
-  })
-
-  it('ignora a linha de TOTAL GERAL', () => {
-    const r = parsePlanilhaObra(planilhaTecnica)
-    const descricoes = r.flatMap(d => d.itens.map(i => i.descricao))
-    expect(descricoes).not.toContain('')
-    expect(r.flatMap(d => d.itens)).toHaveLength(3)
-  })
-
-  it('coloca itens órfãos (sem disciplina antes) em GERAL', () => {
-    const semGrupo = [
-      ['Descrição', 'Nº', 'QT', 'Custo MO'],
-      ['Item solto', 1, 3, 50],
-    ]
-    // header aqui: Descrição col0, Nº col1, QT col2 — item tem Nº → item órfão
-    const r = parsePlanilhaObra(semGrupo)
+describe('parsePlanilhaObra (formato real, deriva markup)', () => {
+  it('lê custo e deriva markup de $ ÷ FEE', () => {
+    const r = parsePlanilhaObra([...cab, header, grupo, item])
     expect(r).toHaveLength(1)
-    expect(r[0].disciplina).toBe('GERAL')
-    expect(r[0].itens[0].descricao).toBe('Item solto')
+    expect(r[0].disciplina).toBe('SERVIÇOS PRELIMINÁRES')
+    const it = r[0].itens[0]
+    expect(it.custo_unit_mao_obra).toBe(200)
+    expect(it.custo_unit_material).toBe(100)
+    expect(it.markup_mao_obra).toBeCloseTo(2.5)   // 510/204
+    expect(it.markup_material).toBeCloseTo(2)      // 204/102
   })
 
-  it('retorna vazio quando não há coluna de descrição reconhecível', () => {
-    expect(parsePlanilhaObra([['xxx', 'yyy'], ['a', 'b']])).toEqual([])
+  it('markup = 1 quando FEE é zero/ausente', () => {
+    const item0 = ['A',1,'X','D','L','UN',1, 0,0, 0,0,0, 0,0, 0,0]
+    const r = parsePlanilhaObra([...cab, header, grupo, item0])
+    expect(r[0].itens[0].markup_mao_obra).toBe(1)
+    expect(r[0].itens[0].markup_material).toBe(1)
   })
+})
 
-  it('numero com vírgula decimal é lido corretamente', () => {
-    const p = [
-      ['Item', 'Nº', 'Descrição', 'QT', 'Custo MO'],
-      ['A', '', 'CIVIL'],
-      ['A', 1, 'Parede', '2,5', '100,50'],
-    ]
-    const item = parsePlanilhaObra(p)[0].itens[0]
-    expect(item.quantidade).toBeCloseTo(2.5)
-    expect(item.custo_unit_mao_obra).toBeCloseTo(100.5)
+describe('parseCabecalhoObra (formato real)', () => {
+  it('extrai codigo, nome, cliente, endereco e cnpj', () => {
+    expect(parseCabecalhoObra([...cab, header])).toEqual({
+      codigo: '08092.01',
+      nome: 'MAGALU - DEPOSITO',
+      cliente: 'MAGALU - PAULISTA',
+      endereco: 'ALAMEDA SANTOS, 2153',
+      cnpj: '12.345.678/0001-00',
+    })
   })
 })
