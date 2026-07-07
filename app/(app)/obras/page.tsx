@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Trash2 } from 'lucide-react'
 import { calcularItem } from '@/lib/calculos'
 import { fmt } from '@/lib/format'
 import type { StatusObra } from '@/types/database'
@@ -88,15 +89,37 @@ export default function ObrasPage() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
   const [importando, setImportando] = useState(false)
+  const [ehAdmin, setEhAdmin] = useState(false)
+  const [excluindo, setExcluindo] = useState<ObraItem | null>(null)
+  const [removendo, setRemovendo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const searchParams = useSearchParams()
 
   useEffect(() => {
     if (searchParams.get('novo') === '1') abrirModal()
+    // Descobre o papel do usuário para exibir ações de administrador
+    fetch('/api/usuarios/me')
+      .then(r => (r.ok ? r.json() : null))
+      .then(u => setEhAdmin(u?.papel === 'admin'))
+      .catch(() => {})
     // roda uma única vez na montagem
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function confirmarExclusao() {
+    if (!excluindo) return
+    setRemovendo(true)
+    const res = await fetch(`/api/obras/${excluindo.id}`, { method: 'DELETE' })
+    setRemovendo(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(data.error ?? 'Não foi possível excluir o orçamento.')
+      return
+    }
+    setObras(prev => prev.filter(o => o.id !== excluindo.id))
+    setExcluindo(null)
+  }
 
   const carregarObras = useCallback(async () => {
     setCarregando(true)
@@ -233,6 +256,7 @@ export default function ObrasPage() {
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Data</th>
                 <th className="px-4 py-3 font-medium text-right">Total Venda</th>
+                {ehAdmin && <th className="px-4 py-3 font-medium text-center w-16">Ações</th>}
               </tr>
             </thead>
             <tbody>
@@ -258,6 +282,19 @@ export default function ObrasPage() {
                   <td className="px-4 py-3 text-right font-mono">
                     R$ {fmt(calcularTotalVendaObra(obra))}
                   </td>
+                  {ehAdmin && (
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        type="button"
+                        aria-label={`Excluir orçamento ${obra.codigo}`}
+                        title="Excluir orçamento"
+                        onClick={e => { e.stopPropagation(); setExcluindo(obra) }}
+                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -322,6 +359,30 @@ export default function ObrasPage() {
             <Button variant="ghost" onClick={() => setModalAberto(false)}>Cancelar</Button>
             <Button onClick={criarObra} disabled={salvando}>
               {salvando ? 'Criando...' : 'Criar obra'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmação de exclusão (apenas administradores) */}
+      <Dialog open={excluindo !== null} onOpenChange={aberto => !aberto && setExcluindo(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir orçamento</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Excluir o orçamento <strong className="text-foreground">{excluindo?.codigo}</strong>
+            {excluindo?.nome ? ` — ${excluindo.nome}` : ''}? Esta ação não pode ser desfeita e
+            remove todos os grupos e itens do orçamento.
+          </p>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setExcluindo(null)}>Cancelar</Button>
+            <Button
+              onClick={confirmarExclusao}
+              disabled={removendo}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {removendo ? 'Excluindo...' : 'Excluir'}
             </Button>
           </DialogFooter>
         </DialogContent>

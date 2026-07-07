@@ -87,6 +87,14 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  // Só administradores excluem orçamentos (o RLS também bloqueia, mas silenciosamente;
+  // a checagem explícita devolve um 403 claro em vez de um "sucesso" que não apaga nada).
+  const { data: usuario } = await supabase
+    .from('usuarios').select('papel').eq('id', user.id).single()
+  if (usuario?.papel !== 'admin') {
+    return NextResponse.json({ error: 'Apenas administradores podem excluir orçamentos' }, { status: 403 })
+  }
+
   const { id } = await params
 
   const { error } = await supabase.from('obras').delete().eq('id', id)
