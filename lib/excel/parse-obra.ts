@@ -252,8 +252,10 @@ export function parseCabecalhoObra(linhas: Celula[][]): CabecalhoObra {
       continue
     }
 
-    // Linha de código+nome: primeiro token começa com dígito (ex.: "08092.01 MAGALU - DEPOSITO")
-    const matchCodigo = /^(\d[\d.\-/]*)\s+(.+)$/.exec(t)
+    // Linha de código+nome: um token de código (3+ caracteres começando com dígito)
+    // seguido do nome. O código pode estar no começo ("08092.01 MAGALU - DEPOSITO")
+    // ou embutido após um prefixo ("ANEXO III - 07982 sp check-up - mykonos").
+    const matchCodigo = /(?:^|\s|-\s*)(\d[\d.\-/]{2,})\s+(\S.*)$/.exec(t)
     if (matchCodigo && resultado.codigo === null) {
       resultado.codigo = matchCodigo[1].trim()
       resultado.nome = matchCodigo[2].trim()

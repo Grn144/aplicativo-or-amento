@@ -121,4 +121,19 @@ describe('parseCabecalhoObra (formato real)', () => {
       cnpj: '12.345.678/0001-00',
     })
   })
+
+  it('extrai código embutido numa linha com prefixo (ex.: "ANEXO III - 07982 ...")', () => {
+    const linhas = [
+      ['', '', 'DESCRITIVO TÉCNICO E COMERCIAL'],
+      ['', '', 'SP CHECK UP MÉDICO MEDICINA PREVENTIVA LTDA'],
+      ['', '', 'ENDEREÇO: RUA GOMES DE CARVALHO, 1356'],
+      ['', '', 'CNPJ: 50.533.923/0002-68'],
+      ['', '', 'ANEXO III - 07982 sp check-up - mykonos'],
+    ]
+    const r = parseCabecalhoObra(linhas)
+    expect(r.codigo).toBe('07982')
+    expect(r.nome).toBe('sp check-up - mykonos')
+    expect(r.cliente).toBe('SP CHECK UP MÉDICO MEDICINA PREVENTIVA LTDA')
+    expect(r.cnpj).toBe('50.533.923/0002-68')
+  })
 })
