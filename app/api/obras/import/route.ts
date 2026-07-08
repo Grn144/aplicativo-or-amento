@@ -38,12 +38,22 @@ export async function POST(request: NextRequest) {
   })
 
   const cabecalho = parseCabecalhoObra(linhas)
-  if (!cabecalho.codigo || !cabecalho.nome) {
+  const disciplinasImportadas = parsePlanilhaObra(linhas)
+
+  // Sem itens reconhecíveis não há o que importar (independe do tamanho da planilha):
+  // o que precisa ser reconhecido são as COLUNAS (DESCRIÇÃO, M. OBRA, MAT, QT...), não o cabeçalho da obra.
+  if (disciplinasImportadas.length === 0) {
     return NextResponse.json(
-      { error: 'Use uma planilha exportada pelo sistema' },
+      { error: 'Não foi possível reconhecer itens na planilha. Verifique se há um cabeçalho com colunas como DESCRIÇÃO, M. OBRA, MAT e QT.' },
       { status: 400 }
     )
   }
+
+  // Código e nome: usa o cabeçalho da obra quando disponível; senão, cai para o
+  // nome do arquivo — assim a importação nunca falha só por não reconhecer o cabeçalho.
+  const nomeArquivo = (file.name ?? '').replace(/\.[^.]+$/, '').trim()
+  const codigo = (cabecalho.codigo ?? (nomeArquivo || 'IMPORTADO')).slice(0, 60)
+  const nome = cabecalho.nome ?? (nomeArquivo || 'Obra importada')
 
   // Cliente: encontra ou cria a partir da razão social do cabeçalho
   let cliente_id: string | null = null
@@ -76,19 +86,12 @@ export async function POST(request: NextRequest) {
   // Obra
   const { data: obra, error: errObra } = await supabase
     .from('obras')
-    .insert({
-      codigo: cabecalho.codigo,
-      nome: cabecalho.nome,
-      cliente_id,
-      criado_por: user.id,
-    })
+    .insert({ codigo, nome, cliente_id, criado_por: user.id })
     .select('id')
     .single()
   if (errObra || !obra) {
     return NextResponse.json({ error: errObra?.message ?? 'Falha ao criar obra' }, { status: 500 })
   }
-
-  const disciplinasImportadas = parsePlanilhaObra(linhas)
 
   let resultado: { disciplinas: number; itens: number }
   try {
