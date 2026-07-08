@@ -12,13 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Trash2 } from 'lucide-react'
 import { calcularItem } from '@/lib/calculos'
 import { fmt } from '@/lib/format'
@@ -227,17 +221,12 @@ export default function ObrasPage() {
           onChange={e => setBusca(e.target.value)}
           className="max-w-sm"
         />
-        <Select value={filtroStatus} onValueChange={v => setFiltroStatus(v ?? '')}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Todos os status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Todos</SelectItem>
-            {(Object.keys(STATUS_LABELS) as StatusObra[]).map(s => (
-              <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <NativeSelect value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} className="w-44">
+          <option value="">Todos os status</option>
+          {(Object.keys(STATUS_LABELS) as StatusObra[]).map(s => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </NativeSelect>
       </div>
 
       {/* Tabela */}
@@ -329,20 +318,16 @@ export default function ObrasPage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="cliente">Cliente</Label>
-              <Select
+              <NativeSelect
+                id="cliente"
                 value={novaObra.cliente_id}
-                onValueChange={v => setNovaObra(prev => ({ ...prev, cliente_id: v ?? '' }))}
+                onChange={e => setNovaObra(prev => ({ ...prev, cliente_id: e.target.value }))}
               >
-                <SelectTrigger id="cliente">
-                  <SelectValue placeholder="Selecionar cliente (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Nenhum</SelectItem>
-                  {clientes.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Nenhum (opcional)</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.razao_social}</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-1">
               <Label htmlFor="data">Data do orçamento</Label>

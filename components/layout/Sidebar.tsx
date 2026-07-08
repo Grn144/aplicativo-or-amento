@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import {
-  Building2, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, X,
+  Building2, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, Users, X,
 } from 'lucide-react'
 import { MARCA } from '@/components/auth/marca'
 import type { Papel } from '@/types/database'
@@ -20,6 +20,7 @@ const PAPEL_LABELS: Record<Papel, string> = {
 const ITENS = [
   { href: '/dashboard', label: 'Dashboard', Icone: LayoutDashboard },
   { href: '/obras', label: 'Obras', Icone: Building2 },
+  { href: '/clientes', label: 'Clientes', Icone: Users },
 ]
 
 export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }) {

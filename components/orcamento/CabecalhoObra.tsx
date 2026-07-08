@@ -3,13 +3,7 @@
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { NativeSelect } from '@/components/ui/native-select'
 import { fmt, fmtPct } from '@/lib/format'
 import type { StatusObra } from '@/types/database'
 import type { Rentabilidade } from '@/types/orcamento'
@@ -87,23 +81,19 @@ export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, 
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Cliente</Label>
-          <Select
+          <NativeSelect
             value={campos.cliente_id}
-            onValueChange={v => {
-              setCampos(p => ({ ...p, cliente_id: v ?? '' }))
+            onChange={e => {
+              const v = e.target.value
+              setCampos(p => ({ ...p, cliente_id: v }))
               salvar('cliente_id', v || null)
             }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecionar..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
-              {clientes.map(c => (
-                <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <option value="">Nenhum</option>
+            {clientes.map(c => (
+              <option key={c.id} value={c.id}>{c.razao_social}</option>
+            ))}
+          </NativeSelect>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Data do orçamento</Label>
@@ -116,23 +106,18 @@ export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, 
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Status</Label>
-          <Select
+          <NativeSelect
             value={campos.status}
-            onValueChange={v => {
-              const novo = (v ?? campos.status) as StatusObra
+            onChange={e => {
+              const novo = e.target.value as StatusObra
               setCampos(p => ({ ...p, status: novo }))
               salvar('status', novo)
             }}
           >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(STATUS_LABELS) as StatusObra[]).map(s => (
-                <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {(Object.keys(STATUS_LABELS) as StatusObra[]).map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </NativeSelect>
         </div>
       </div>
 
