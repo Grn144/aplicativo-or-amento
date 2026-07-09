@@ -96,6 +96,26 @@ describe('parsePlanilhaObra — markup relativo a custo×1.02 (FEE da planilha p
   })
 })
 
+describe('parsePlanilhaObra — markup relativo a custo×1.02 (FEE fora do padrão)', () => {
+  it('deriva markup por custo×1.02 mesmo quando o FEE da planilha não é 1.02', () => {
+    // Item onde o FEE da planilha = custo (fator 1.0, não 1.02): custo 350, FEE 350, $ 577.5
+    const linhaFeeLabels: Celula[] = []
+    linhaFeeLabels[12] = 'FEE M.OBRA'; linhaFeeLabels[13] = '$ M.OBRA'
+    linhaFeeLabels[14] = 'FEE MAT'; linhaFeeLabels[15] = '$ MAT'
+    const headerPrincipal: Celula[] = ['ITEM', 'Nº', 'DESCRIÇÃO', 'DISCIPLINA', 'LOCAL', 'UN.', 'QT.', 'M. OBRA', 'MAT', 'M. OBRA', 'MAT', 'TOTAL']
+    const disc: Celula[] = ['A', '', 'CIVIL']
+    const it: Celula[] = ['A', 1, 'SERVICO', 'CIVIL', 'GERAL', 'VB', 2, 350, 0, 350, 0, 700]
+    it[12] = 350; it[13] = 577.5; it[14] = 0; it[15] = 0
+
+    const r = parsePlanilhaObra([...cab, linhaFeeLabels, headerPrincipal, disc, it])
+    const item0 = r[0].itens[0]
+    // markup = 577.5 / (350 × 1.02), NÃO 577.5/350
+    expect(item0.markup_mao_obra).toBeCloseTo(577.5 / (350 * 1.02), 8)
+    // ao recompor com o FEE padrão do app (1.02), reproduz a venda exatamente
+    expect(350 * 1.02 * item0.markup_mao_obra).toBeCloseTo(577.5, 4)
+  })
+})
+
 describe('resolverCelula (célula de fórmula do exceljs)', () => {
   it('extrai o resultado de uma célula de fórmula', () => {
     expect(resolverCelula({ formula: 'H10*1.02', result: 204 })).toBe(204)
