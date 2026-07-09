@@ -54,13 +54,16 @@ export async function POST(request: NextRequest) {
   if (!codigo?.trim() || !nome?.trim()) {
     return NextResponse.json({ error: 'Código e nome são obrigatórios' }, { status: 400 })
   }
+  if (!cliente_id?.trim()) {
+    return NextResponse.json({ error: 'Cliente é obrigatório' }, { status: 400 })
+  }
 
   const { data, error } = await supabase
     .from('obras')
     .insert({
       codigo: codigo.trim(),
       nome: nome.trim(),
-      cliente_id: cliente_id ?? null,
+      cliente_id: cliente_id.trim(),
       data_orcamento: data_orcamento ?? null,
       criado_por: user.id,
     })

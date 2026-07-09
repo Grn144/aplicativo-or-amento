@@ -57,6 +57,9 @@ export async function PUT(
   const { id } = await params
   const body = await lerJson(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
+  if ('cliente_id' in body && !body.cliente_id) {
+    return NextResponse.json({ error: 'Cliente é obrigatório' }, { status: 400 })
+  }
 
   // Campos permitidos para atualização do cabeçalho
   const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status', 'fee_fator', 'comissao_pct', 'imposto_pct'] as const
