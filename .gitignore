@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# arquivos de referencia com dados reais de cliente (nao usados em runtime)
+/templates/*.xlsx
