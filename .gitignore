@@ -42,3 +42,6 @@ next-env.d.ts
 
 # arquivos de referencia com dados reais de cliente (nao usados em runtime)
 /templates/*.xlsx
+
+# saida do graphify (analise de codebase, gerada localmente)
+/graphify-out/
