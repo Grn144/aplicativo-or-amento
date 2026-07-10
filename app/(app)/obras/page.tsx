@@ -61,6 +61,7 @@ function calcularTotalVendaObra(obra: ObraItem): number {
     const calc = calcularItem({
       id: '', grupo_id: '', numero: 0, descricao: '', local: null,
       unidade_id: null, observacao: null, observacao_2: null, ordem: 0,
+      fee_mao_obra: null, fee_material: null,
       quantidade: item.quantidade,
       custo_unit_mao_obra: item.custo_unit_mao_obra,
       custo_unit_material: item.custo_unit_material,

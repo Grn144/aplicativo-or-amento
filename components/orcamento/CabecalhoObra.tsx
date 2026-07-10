@@ -29,8 +29,8 @@ interface ObraCabecalho {
 interface Props {
   obra: ObraCabecalho
   clientes: { id: string; razao_social: string }[]
-  fatores: { fee_fator: number; comissao_pct: number; imposto_pct: number }
-  onFatorChange: (campo: 'fee_fator' | 'comissao_pct' | 'imposto_pct', valor: number) => void
+  fatores: { fee_fator: number; comissao_valor: number; imposto_valor: number }
+  onFatorChange: (campo: 'fee_fator' | 'comissao_valor' | 'imposto_valor', valor: number) => void
   rentabilidade: Rentabilidade
 }
 
@@ -44,8 +44,8 @@ export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, 
   })
   const [fatoresTexto, setFatoresTexto] = useState({
     fee_fator: String(fatores.fee_fator),
-    comissao_pct: String(fatores.comissao_pct),
-    imposto_pct: String(fatores.imposto_pct),
+    comissao_valor: String(fatores.comissao_valor),
+    imposto_valor: String(fatores.imposto_valor),
   })
 
   async function salvar(campo: string, valor: string | null) {
@@ -134,23 +134,23 @@ export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, 
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Comissão %</Label>
+          <Label className="text-xs text-muted-foreground">Comissão (R$)</Label>
           <Input
             type="number"
             step="0.01"
-            value={fatoresTexto.comissao_pct}
-            onChange={e => setFatoresTexto(p => ({ ...p, comissao_pct: e.target.value }))}
-            onBlur={() => onFatorChange('comissao_pct', parseFloat(fatoresTexto.comissao_pct) || 0)}
+            value={fatoresTexto.comissao_valor}
+            onChange={e => setFatoresTexto(p => ({ ...p, comissao_valor: e.target.value }))}
+            onBlur={() => onFatorChange('comissao_valor', parseFloat(fatoresTexto.comissao_valor) || 0)}
           />
         </div>
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Imposto %</Label>
+          <Label className="text-xs text-muted-foreground">Imposto (R$)</Label>
           <Input
             type="number"
             step="0.01"
-            value={fatoresTexto.imposto_pct}
-            onChange={e => setFatoresTexto(p => ({ ...p, imposto_pct: e.target.value }))}
-            onBlur={() => onFatorChange('imposto_pct', parseFloat(fatoresTexto.imposto_pct) || 0)}
+            value={fatoresTexto.imposto_valor}
+            onChange={e => setFatoresTexto(p => ({ ...p, imposto_valor: e.target.value }))}
+            onBlur={() => onFatorChange('imposto_valor', parseFloat(fatoresTexto.imposto_valor) || 0)}
           />
         </div>
       </div>

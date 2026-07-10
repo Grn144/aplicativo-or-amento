@@ -1,13 +1,15 @@
 import type { ItemOrcamento, GrupoOrcamento } from '@/types/database'
 import type { ItemCalculado, TotaisGrupo, TotaisGerais, GrupoCalculado, Rentabilidade } from '@/types/orcamento'
 
-export function calcularItem(item: ItemOrcamento, feeFator: number): ItemCalculado {
+export function calcularItem(item: ItemOrcamento, feeFatorObra: number): ItemCalculado {
   const subtotal_mao_obra_custo = item.custo_unit_mao_obra * item.quantidade
   const subtotal_material_custo = item.custo_unit_material * item.quantidade
   const total_custo = subtotal_mao_obra_custo + subtotal_material_custo
 
-  const fee_unit_mao_obra = item.custo_unit_mao_obra * feeFator
-  const fee_unit_material = item.custo_unit_material * feeFator
+  const feeMaoObra = item.fee_mao_obra ?? feeFatorObra
+  const feeMaterial = item.fee_material ?? feeFatorObra
+  const fee_unit_mao_obra = item.custo_unit_mao_obra * feeMaoObra
+  const fee_unit_material = item.custo_unit_material * feeMaterial
   const preco_unit_mao_obra_venda = fee_unit_mao_obra * item.markup_mao_obra
   const preco_unit_material_venda = fee_unit_material * item.markup_material
   const subtotal_mao_obra_venda = preco_unit_mao_obra_venda * item.quantidade
@@ -54,9 +56,9 @@ export function calcularTotaisGrupo(itens: ItemCalculado[]): TotaisGrupo {
 
 export function calcularGrupo(
   grupo: GrupoOrcamento & { itens_orcamento: ItemOrcamento[] },
-  feeFator: number
+  feeFatorObra: number
 ): GrupoCalculado {
-  const itens_calculados = grupo.itens_orcamento.map(it => calcularItem(it, feeFator))
+  const itens_calculados = grupo.itens_orcamento.map(it => calcularItem(it, feeFatorObra))
   const totais = calcularTotaisGrupo(itens_calculados)
   return { ...grupo, itens_calculados, totais }
 }
@@ -83,13 +85,13 @@ export function calcularTotaisGerais(grupos: GrupoCalculado[]): TotaisGerais {
 
 export function calcularRentabilidade(
   grupos: GrupoCalculado[],
-  fatores: { fee_fator: number; comissao_pct: number; imposto_pct: number }
+  fatores: { fee_fator: number; comissao_valor: number; imposto_valor: number }
 ): Rentabilidade {
   const totais = calcularTotaisGerais(grupos)
   const faturamento = totais.total_venda
   const custo_total = totais.total_custo
-  const comissao = faturamento * (fatores.comissao_pct / 100)
-  const imposto = (faturamento - comissao) * (fatores.imposto_pct / 100)
+  const comissao = fatores.comissao_valor
+  const imposto = fatores.imposto_valor
   const custo_com_fee = custo_total * fatores.fee_fator
   const liquido = faturamento - comissao - imposto - custo_com_fee
   const liquido_pct = faturamento > 0 ? (liquido / faturamento) * 100 : null

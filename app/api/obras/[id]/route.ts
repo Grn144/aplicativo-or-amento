@@ -62,7 +62,7 @@ export async function PUT(
   }
 
   // Campos permitidos para atualização do cabeçalho
-  const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status', 'fee_fator', 'comissao_pct', 'imposto_pct'] as const
+  const campos = ['codigo', 'nome', 'cliente_id', 'data_orcamento', 'status', 'fee_fator', 'comissao_valor', 'imposto_valor'] as const
   const updates: Record<string, unknown> = { atualizado_em: new Date().toISOString() }
   for (const campo of campos) {
     if (campo in body) updates[campo] = body[campo]

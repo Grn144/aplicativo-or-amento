@@ -38,8 +38,8 @@ export interface Obra {
   data_orcamento: string | null
   status: StatusObra
   fee_fator: number
-  comissao_pct: number
-  imposto_pct: number
+  comissao_valor: number
+  imposto_valor: number
   criado_por: string | null
   criado_em: string
   atualizado_em: string
@@ -69,6 +69,8 @@ export interface ItemOrcamento {
   custo_unit_material: number
   markup_mao_obra: number
   markup_material: number
+  fee_mao_obra: number | null
+  fee_material: number | null
   observacao: string | null
   observacao_2: string | null
   ordem: number

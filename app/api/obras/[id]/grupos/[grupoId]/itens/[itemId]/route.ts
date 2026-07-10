@@ -39,6 +39,7 @@ export async function PUT(
     'descricao', 'local', 'unidade_id', 'quantidade',
     'custo_unit_mao_obra', 'custo_unit_material',
     'markup_mao_obra', 'markup_material',
+    'fee_mao_obra', 'fee_material',
     'observacao', 'observacao_2',
   ] as const
 

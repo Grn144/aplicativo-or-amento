@@ -19,8 +19,8 @@ type ObraParaEditor = {
   status: import('@/types/database').StatusObra
   data_orcamento: string | null
   fee_fator?: number
-  comissao_pct?: number
-  imposto_pct?: number
+  comissao_valor?: number
+  imposto_valor?: number
   clientes: { id: string; razao_social: string } | null
   grupos_orcamento: GrupoComItens[]
 }
@@ -42,8 +42,8 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const [unidadesList, setUnidadesList] = useState(unidades)
   const [fatores, setFatores] = useState({
     fee_fator: obra.fee_fator ?? 1.02,
-    comissao_pct: obra.comissao_pct ?? 12,
-    imposto_pct: obra.imposto_pct ?? 30,
+    comissao_valor: obra.comissao_valor ?? 0,
+    imposto_valor: obra.imposto_valor ?? 0,
   })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,7 +52,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
   const rentabilidade = calcularRentabilidade(gruposCalculados, fatores)
 
-  async function salvarFator(campo: 'fee_fator' | 'comissao_pct' | 'imposto_pct', valor: number) {
+  async function salvarFator(campo: 'fee_fator' | 'comissao_valor' | 'imposto_valor', valor: number) {
     const snapshot = fatores
     setFatores(prev => ({ ...prev, [campo]: valor }))
     const res = await fetch(`/api/obras/${obra.id}`, {

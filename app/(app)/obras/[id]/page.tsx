@@ -9,8 +9,8 @@ type ObraCompleta = {
   status: import('@/types/database').StatusObra
   data_orcamento: string | null
   fee_fator: number
-  comissao_pct: number
-  imposto_pct: number
+  comissao_valor: number
+  imposto_valor: number
   clientes: { id: string; razao_social: string } | null
   grupos_orcamento: {
     id: string
@@ -31,6 +31,8 @@ type ObraCompleta = {
       custo_unit_material: number
       markup_mao_obra: number
       markup_material: number
+      fee_mao_obra: number | null
+      fee_material: number | null
       observacao: string | null
       observacao_2: string | null
       ordem: number
@@ -52,7 +54,7 @@ export default async function ObraPage({
       .from('obras')
       .select(`
         id, codigo, nome, status, data_orcamento,
-        fee_fator, comissao_pct, imposto_pct,
+        fee_fator, comissao_valor, imposto_valor,
         clientes (id, razao_social),
         grupos_orcamento (
           id, obra_id, disciplina_id, letra, ordem,
@@ -61,6 +63,7 @@ export default async function ObraPage({
             id, grupo_id, numero, descricao, local, unidade_id,
             quantidade, custo_unit_mao_obra, custo_unit_material,
             markup_mao_obra, markup_material,
+            fee_mao_obra, fee_material,
             observacao, observacao_2, ordem,
             unidades_medida (id, sigla, descricao)
           )
