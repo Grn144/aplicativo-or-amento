@@ -11,6 +11,7 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   const { id } = await params
+  // ambos os tipos usam o mesmo layout hoje — templates comercial/técnico são byte-idênticos; ver Trilha D no plano
   const tipo = request.nextUrl.searchParams.get('tipo') === 'tecnico' ? 'tecnico' : 'comercial'
 
   const { data: obra, error } = await supabase

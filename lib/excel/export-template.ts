@@ -63,6 +63,7 @@ function estilizarLinha(row: ExcelJS.Row, opts: { bold: boolean; fill: typeof GR
 
 export function montarPlanilhaDescritivo(obra: ObraCabecalho, grupos: GrupoComItens[]): ExcelJS.Workbook {
   const wb = new ExcelJS.Workbook()
+  wb.calcProperties.fullCalcOnLoad = true
   wb.creator = 'Sistema de Orçamentos'
   const ws = wb.addWorksheet('.')
 
