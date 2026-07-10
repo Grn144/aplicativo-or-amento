@@ -82,14 +82,15 @@ export default function CabecalhoObra({ obra, clientes, fatores, onFatorChange, 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Cliente</Label>
           <NativeSelect
+            required
             value={campos.cliente_id}
             onChange={e => {
               const v = e.target.value
               setCampos(p => ({ ...p, cliente_id: v }))
-              salvar('cliente_id', v || null)
+              if (v) salvar('cliente_id', v)
             }}
           >
-            <option value="">Nenhum</option>
+            <option value="" disabled>Selecione...</option>
             {clientes.map(c => (
               <option key={c.id} value={c.id}>{c.razao_social}</option>
             ))}

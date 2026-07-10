@@ -147,6 +147,10 @@ export default function ObrasPage() {
       setErro('Código e nome são obrigatórios')
       return
     }
+    if (!novaObra.cliente_id) {
+      setErro('Selecione um cliente')
+      return
+    }
     setSalvando(true)
     setErro('')
     const res = await fetch('/api/obras', {
@@ -317,13 +321,14 @@ export default function ObrasPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="cliente">Cliente</Label>
+              <Label htmlFor="cliente">Cliente *</Label>
               <NativeSelect
                 id="cliente"
+                required
                 value={novaObra.cliente_id}
                 onChange={e => setNovaObra(prev => ({ ...prev, cliente_id: e.target.value }))}
               >
-                <option value="">Nenhum (opcional)</option>
+                <option value="" disabled>Selecione...</option>
                 {clientes.map(c => (
                   <option key={c.id} value={c.id}>{c.razao_social}</option>
                 ))}
@@ -342,7 +347,7 @@ export default function ObrasPage() {
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setModalAberto(false)}>Cancelar</Button>
-            <Button onClick={criarObra} disabled={salvando}>
+            <Button onClick={criarObra} disabled={salvando || !novaObra.cliente_id}>
               {salvando ? 'Criando...' : 'Criar obra'}
             </Button>
           </DialogFooter>
