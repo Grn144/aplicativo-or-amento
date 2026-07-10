@@ -26,7 +26,7 @@ function CelulaEditavel({
   className,
   onSave,
 }: {
-  valor: string | number
+  valor: string | number | null
   tipo: 'text' | 'number'
   className?: string
   onSave: (v: string) => void
@@ -36,7 +36,7 @@ function CelulaEditavel({
   const canceladoRef = useRef(false)
 
   function abrir() {
-    setDraft(String(valor))
+    setDraft(valor === null ? '' : String(valor))
     canceladoRef.current = false
     setEditando(true)
   }
@@ -75,7 +75,9 @@ function CelulaEditavel({
       className={`cursor-text hover:bg-muted/50 rounded px-1 min-h-[1.25rem] select-none ${className ?? ''}`}
       title="Duplo clique para editar"
     >
-      {tipo === 'number' ? fmt(Number(valor)) : String(valor || '—')}
+      {tipo === 'number'
+        ? (valor === null || valor === '' ? '—' : fmt(Number(valor)))
+        : String(valor || '—')}
     </div>
   )
 }
@@ -105,7 +107,7 @@ export default function TabelaOrcamento({
   }
 
   const colsComercial = 11
-  const colsTecnica = 20
+  const colsTecnica = 22
 
   if (visao === 'comercial') {
     return (
@@ -313,6 +315,8 @@ export default function TabelaOrcamento({
               <th className="px-2 py-2 text-right font-medium border-b border-border w-22">Total Custo</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup M.Obra</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-16">Markup Mat.</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">Fator FEE M.O.</th>
+              <th className="px-2 py-2 text-right font-medium border-b border-border w-20">Fator FEE Mat.</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-20">FEE M.OBRA</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-20">$ M.OBRA</th>
               <th className="px-2 py-2 text-right font-medium border-b border-border w-20">FEE MAT</th>
@@ -338,7 +342,7 @@ export default function TabelaOrcamento({
                   <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.total_custo)}
                   </td>
-                  <td colSpan={6} className="border-b border-border" />
+                  <td colSpan={8} className="border-b border-border" />
                   <td className="px-2 py-1.5 text-right border-b border-border font-mono">
                     {fmt(grupo.totais.subtotal_mao_obra_venda)}
                   </td>
@@ -436,6 +440,22 @@ export default function TabelaOrcamento({
                         onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 1)}
                       />
                     </td>
+                    <td className="px-2 py-1">
+                      <CelulaEditavel
+                        valor={item.fee_mao_obra}
+                        tipo="number"
+                        className="text-right"
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'fee_mao_obra', v.trim() === '' ? null : parseFloat(v))}
+                      />
+                    </td>
+                    <td className="px-2 py-1">
+                      <CelulaEditavel
+                        valor={item.fee_material}
+                        tipo="number"
+                        className="text-right"
+                        onSave={v => onUpdateItem(grupo.id, item.id, 'fee_material', v.trim() === '' ? null : parseFloat(v))}
+                      />
+                    </td>
                     <td className="px-2 py-1 text-right font-mono text-muted-foreground">
                       {fmt(item.fee_unit_mao_obra)}
                     </td>
@@ -482,7 +502,7 @@ export default function TabelaOrcamento({
             <tr>
               <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_custo)}</td>
-              <td colSpan={6} />
+              <td colSpan={8} />
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_mao_obra_venda)}</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_material_venda)}</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_venda)}</td>
