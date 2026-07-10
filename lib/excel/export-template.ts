@@ -11,7 +11,7 @@ const HAIR_SIDE = { style: 'hair' as const, color: { theme: 0, tint: -0.14996795
 const HAIR_BORDER = { left: HAIR_SIDE, right: HAIR_SIDE, top: HAIR_SIDE, bottom: HAIR_SIDE }
 const GROUP_FILL = {
   type: 'pattern' as const, pattern: 'solid' as const,
-  fgColor: { theme: 0, tint: -0.1499984740745262 }, bgColor: { indexed: 64 },
+  fgColor: { theme: 0, tint: -0.1499984740745262 },
 }
 const NO_FILL = { type: 'pattern' as const, pattern: 'none' as const }
 const NUMFMT_MONEY = '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"??_-;_-@_-'
