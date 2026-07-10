@@ -12,7 +12,14 @@ import { ThemeToggle } from '@/components/layout/ThemeToggle'
 import { PERIODO_LABELS, type PeriodoKey } from '@/lib/dashboard/periodo'
 import { cn } from '@/lib/utils'
 
-export function HeaderDashboard({ periodo, usuario }: { periodo: PeriodoKey; usuario: { nome: string } }) {
+export function HeaderDashboard({
+  periodo, usuario, clientes, clienteSelecionado,
+}: {
+  periodo: PeriodoKey
+  usuario: { nome: string }
+  clientes: { id: string; razao_social: string }[]
+  clienteSelecionado: string | null
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [busca, setBusca] = useState(searchParams.get('busca') ?? '')
@@ -40,6 +47,13 @@ export function HeaderDashboard({ periodo, usuario }: { periodo: PeriodoKey; usu
     router.push(`/dashboard?${params.toString()}`)
   }
 
+  function mudarCliente(novo: string | null) {
+    const params = new URLSearchParams(searchParams.toString())
+    if (novo) params.set('cliente', novo)
+    else params.delete('cliente')
+    router.push(`/dashboard?${params.toString()}`)
+  }
+
   const iniciais = usuario.nome.split(' ').filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join('')
 
   return (
@@ -53,6 +67,18 @@ export function HeaderDashboard({ periodo, usuario }: { periodo: PeriodoKey; usu
         <SelectContent>
           {(Object.keys(PERIODO_LABELS) as PeriodoKey[]).map(k => (
             <SelectItem key={k} value={k}>{PERIODO_LABELS[k]}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={clienteSelecionado ?? ''} onValueChange={mudarCliente}>
+        <SelectTrigger className="w-52">
+          <SelectValue placeholder="Todos os clientes" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">Todos os clientes</SelectItem>
+          {clientes.map(c => (
+            <SelectItem key={c.id} value={c.id}>{c.razao_social}</SelectItem>
           ))}
         </SelectContent>
       </Select>

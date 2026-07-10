@@ -17,18 +17,17 @@ import { RealtimeRefresh } from '@/components/dashboard/RealtimeRefresh'
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string; busca?: string }>
+  searchParams: Promise<{ periodo?: string; busca?: string; cliente?: string }>
 }) {
   const params = await searchParams
   const periodo = parsePeriodo(params.periodo)
   const intervalo = intervaloDoPeriodo(periodo)
+  const clienteId = params.cliente?.trim() || null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: usuario }, { data: obras, error: erroObras }, { data: historico }] = await Promise.all([
-    supabase.from('usuarios').select('nome, papel').eq('id', user!.id).single(),
-    supabase.from('obras').select(`
+  let obrasQuery = supabase.from('obras').select(`
       id, codigo, nome, status, data_orcamento, criado_em,
       clientes ( id, razao_social ),
       usuarios ( nome ),
@@ -38,12 +37,18 @@ export default async function DashboardPage({
           markup_mao_obra, markup_material
         )
       )
-    `),
+    `)
+  if (clienteId) obrasQuery = obrasQuery.eq('cliente_id', clienteId)
+
+  const [{ data: usuario }, { data: obras, error: erroObras }, { data: historico }, { data: listaClientes }] = await Promise.all([
+    supabase.from('usuarios').select('nome, papel').eq('id', user!.id).single(),
+    obrasQuery,
     supabase
       .from('historico_alteracoes')
       .select('id, campo, valor_novo, alterado_em, usuarios ( nome ), obras ( codigo, nome )')
       .order('alterado_em', { ascending: false })
       .limit(8),
+    supabase.from('clientes').select('id, razao_social').order('razao_social'),
   ])
 
   if (erroObras) throw new Error(`Falha ao carregar o dashboard: ${erroObras.message}`)
@@ -73,7 +78,12 @@ export default async function DashboardPage({
   return (
     <div className="space-y-6 p-6" id="area-impressao">
       <RealtimeRefresh />
-      <HeaderDashboard periodo={periodo} usuario={{ nome: usuario?.nome ?? 'Usuário' }} />
+      <HeaderDashboard
+        periodo={periodo}
+        usuario={{ nome: usuario?.nome ?? 'Usuário' }}
+        clientes={listaClientes ?? []}
+        clienteSelecionado={clienteId}
+      />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
