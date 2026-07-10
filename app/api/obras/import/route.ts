@@ -83,6 +83,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  if (!cliente_id) {
+    return NextResponse.json({ error: 'Cliente é obrigatório' }, { status: 400 })
+  }
+
   // Obra
   const { data: obra, error: errObra } = await supabase
     .from('obras')
