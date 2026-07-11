@@ -171,8 +171,10 @@ export async function PUT(
     .single()
   if (erroUpdate) return NextResponse.json({ error: erroUpdate.message }, { status: 500 })
 
-  await supabase.from('composicao_materiais').delete().eq('composicao_id', id)
-  await supabase.from('composicao_mao_obra').delete().eq('composicao_id', id)
+  const { error: erroDeleteMateriais } = await supabase.from('composicao_materiais').delete().eq('composicao_id', id)
+  if (erroDeleteMateriais) return NextResponse.json({ error: erroDeleteMateriais.message }, { status: 500 })
+  const { error: erroDeleteMaoObra } = await supabase.from('composicao_mao_obra').delete().eq('composicao_id', id)
+  if (erroDeleteMaoObra) return NextResponse.json({ error: erroDeleteMaoObra.message }, { status: 500 })
 
   const [resMateriais, resMaoObra] = await Promise.all([
     materiaisNovos.length > 0
@@ -189,12 +191,13 @@ export async function PUT(
   if (resMateriais.error) return NextResponse.json({ error: resMateriais.error.message }, { status: 500 })
   if (resMaoObra.error) return NextResponse.json({ error: resMaoObra.error.message }, { status: 500 })
 
-  await supabase.from('composicao_versoes').insert({
+  const { error: erroVersao } = await supabase.from('composicao_versoes').insert({
     composicao_id: id,
     versao: novaVersao,
     snapshot: { composicao: composicaoAtualizada, materiais: resMateriais.data, mao_obra: resMaoObra.data },
     usuario_id: user.id,
   })
+  if (erroVersao) return NextResponse.json({ error: erroVersao.message }, { status: 500 })
 
   return NextResponse.json({
     ...composicaoAtualizada,
