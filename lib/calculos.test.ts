@@ -8,7 +8,8 @@ function item(over: Partial<ItemOrcamento> = {}): ItemOrcamento {
     unidade_id: null, observacao: null, observacao_2: null, ordem: 1,
     quantidade: 1, custo_unit_mao_obra: 0, custo_unit_material: 0,
     markup_mao_obra: 1, markup_material: 1,
-    fee_mao_obra: null, fee_material: null, ...over,
+    fee_mao_obra: null, fee_material: null,
+    composicao_id: null, composicao_versao: null, ...over,
   }
 }
 

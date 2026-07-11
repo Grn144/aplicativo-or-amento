@@ -74,6 +74,8 @@ export interface ItemOrcamento {
   observacao: string | null
   observacao_2: string | null
   ordem: number
+  composicao_id: string | null
+  composicao_versao: number | null
   unidades_medida?: UnidadeMedida
 }
 
@@ -86,4 +88,61 @@ export interface HistoricoAlteracao {
   valor_novo: string | null
   alterado_em: string
   usuarios?: Pick<Usuario, 'nome'>
+}
+
+export interface Composicao {
+  id: string
+  codigo: string
+  nome: string
+  disciplina_id: string | null
+  descricao_tecnica: string
+  unidade_id: string | null
+  produtividade: string | null
+  custo_direto: number
+  markup_sugerido: number
+  observacoes: string | null
+  tags: string[]
+  versao: number
+  ativo: boolean
+  responsavel_id: string | null
+  criado_em: string
+  atualizado_em: string
+  disciplinas?: Pick<Disciplina, 'id' | 'nome'> | null
+  unidades_medida?: Pick<UnidadeMedida, 'id' | 'sigla'> | null
+  favorito?: boolean
+}
+
+export interface ComposicaoMaterial {
+  id: string
+  composicao_id: string
+  descricao: string
+  quantidade: number
+  unidade_id: string | null
+  fornecedor: string | null
+  preco_unitario: number
+  ordem: number
+  unidades_medida?: Pick<UnidadeMedida, 'id' | 'sigla'> | null
+}
+
+export interface ComposicaoMaoObra {
+  id: string
+  composicao_id: string
+  cargo: string
+  horas: number
+  custo_hora: number
+  ordem: number
+}
+
+export interface ComposicaoVersao {
+  id: string
+  composicao_id: string
+  versao: number
+  usuario_id: string | null
+  criado_em: string
+  usuarios?: Pick<Usuario, 'nome'> | null
+}
+
+export interface ComposicaoCompleta extends Composicao {
+  composicao_materiais: ComposicaoMaterial[]
+  composicao_mao_obra: ComposicaoMaoObra[]
 }

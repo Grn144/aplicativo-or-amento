@@ -21,6 +21,8 @@ function item(over: Partial<ItemOrcamento> = {}): ItemOrcamento {
     markup_material: 1.5,
     fee_mao_obra: null,
     fee_material: null,
+    composicao_id: null,
+    composicao_versao: null,
     observacao: null,
     observacao_2: null,
     ordem: 1,

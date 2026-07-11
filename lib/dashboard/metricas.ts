@@ -82,6 +82,7 @@ function calcularObra(obra: ObraDashboard): { venda: number; custo: number } {
         id: '', grupo_id: '', numero: 0, descricao: '', local: null,
         unidade_id: null, observacao: null, observacao_2: null, ordem: 0,
         fee_mao_obra: null, fee_material: null,
+        composicao_id: null, composicao_versao: null,
         ...item,
       }, 1.02) // fee padrão para KPIs; o valor por obra é aplicado no editor/export
       return { venda: acc.venda + c.total_venda, custo: acc.custo + c.total_custo }
