@@ -17,7 +17,7 @@ export async function GET(
   const { data: obra, error } = await supabase
     .from('obras')
     .select(`
-      codigo, nome,
+      codigo, nome, fee_fator, comissao_valor, imposto_valor,
       clientes (razao_social, endereco, cnpj),
       grupos_orcamento (
         letra, ordem,
@@ -25,7 +25,7 @@ export async function GET(
         itens_orcamento (
           numero, descricao, local, ordem,
           quantidade, custo_unit_mao_obra, custo_unit_material,
-          observacao, observacao_2,
+          markup_mao_obra, markup_material, fee_mao_obra, fee_material,
           unidades_medida (sigla)
         )
       )
@@ -57,14 +57,21 @@ export async function GET(
           quantidade: Number(item.quantidade),
           custo_unit_mao_obra: Number(item.custo_unit_mao_obra),
           custo_unit_material: Number(item.custo_unit_material),
-          observacao: item.observacao,
-          observacao_2: item.observacao_2,
+          markup_mao_obra: Number(item.markup_mao_obra),
+          markup_material: Number(item.markup_material),
+          fee_mao_obra: item.fee_mao_obra === null || item.fee_mao_obra === undefined ? null : Number(item.fee_mao_obra),
+          fee_material: item.fee_material === null || item.fee_material === undefined ? null : Number(item.fee_material),
         })),
     }))
 
   const wb = montarPlanilhaDescritivo(
     { codigo: obra.codigo, nome: obra.nome, cliente },
-    grupos
+    grupos,
+    {
+      fee_fator: Number(obra.fee_fator ?? 1.02),
+      comissao_valor: Number(obra.comissao_valor ?? 0),
+      imposto_valor: Number(obra.imposto_valor ?? 0),
+    },
   )
 
   const buffer = await wb.xlsx.writeBuffer()
