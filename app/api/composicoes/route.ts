@@ -138,12 +138,13 @@ export async function POST(request: NextRequest) {
   if (resMateriais.error) return NextResponse.json({ error: resMateriais.error.message }, { status: 500 })
   if (resMaoObra.error) return NextResponse.json({ error: resMaoObra.error.message }, { status: 500 })
 
-  await supabase.from('composicao_versoes').insert({
+  const { error: erroVersao } = await supabase.from('composicao_versoes').insert({
     composicao_id: composicao.id,
     versao: 1,
     snapshot: { composicao, materiais: resMateriais.data, mao_obra: resMaoObra.data },
     usuario_id: user.id,
   })
+  if (erroVersao) return NextResponse.json({ error: erroVersao.message }, { status: 500 })
 
   return NextResponse.json(
     { ...composicao, composicao_materiais: resMateriais.data, composicao_mao_obra: resMaoObra.data },
