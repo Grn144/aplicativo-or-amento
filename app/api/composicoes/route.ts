@@ -78,12 +78,15 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // Limite explícito alto: sem isso, o cap padrão do PostgREST (geralmente 1000
+  // linhas) poderia truncar a resposta numa biblioteca grande, gerando falso
+  // positivo de "incompleta" pra composições cujas linhas caíram fora do corte.
   const { data: materiaisContagem, error: erroMateriais } = idsResultado.length > 0
-    ? await supabase.from('composicao_materiais').select('composicao_id').in('composicao_id', idsResultado)
+    ? await supabase.from('composicao_materiais').select('composicao_id').in('composicao_id', idsResultado).limit(50000)
     : { data: [], error: null }
   if (erroMateriais) return NextResponse.json({ error: erroMateriais.message }, { status: 500 })
   const { data: maoObraContagem, error: erroMaoObra } = idsResultado.length > 0
-    ? await supabase.from('composicao_mao_obra').select('composicao_id').in('composicao_id', idsResultado)
+    ? await supabase.from('composicao_mao_obra').select('composicao_id').in('composicao_id', idsResultado).limit(50000)
     : { data: [], error: null }
   if (erroMaoObra) return NextResponse.json({ error: erroMaoObra.message }, { status: 500 })
 
