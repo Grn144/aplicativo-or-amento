@@ -110,6 +110,8 @@ export interface Composicao {
   disciplinas?: Pick<Disciplina, 'id' | 'nome'> | null
   unidades_medida?: Pick<UnidadeMedida, 'id' | 'sigla'> | null
   favorito?: boolean
+  total_usos?: number
+  ultimo_uso?: string | null
 }
 
 export interface ComposicaoMaterial {
@@ -145,4 +147,15 @@ export interface ComposicaoVersao {
 export interface ComposicaoCompleta extends Composicao {
   composicao_materiais: ComposicaoMaterial[]
   composicao_mao_obra: ComposicaoMaoObra[]
+}
+
+export interface ComposicaoUso {
+  id: string
+  composicao_id: string
+  composicao_versao: number
+  obra_id: string
+  usuario_id: string | null
+  criado_em: string
+  obras?: Pick<Obra, 'codigo' | 'nome'> | null
+  usuarios?: Pick<Usuario, 'nome'> | null
 }
