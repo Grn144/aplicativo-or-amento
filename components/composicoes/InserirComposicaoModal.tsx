@@ -35,12 +35,20 @@ export default function InserirComposicaoModal({ aberto, onOpenChange, obraId, g
 
   const buscar = useCallback(async () => {
     setBuscando(true)
-    const params = new URLSearchParams()
-    if (busca.trim()) params.set('busca', busca.trim())
-    const res = await fetch(`/api/composicoes?${params.toString()}`)
-    const data = await res.json()
-    setResultados(Array.isArray(data) ? data : [])
-    setBuscando(false)
+    try {
+      const params = new URLSearchParams()
+      if (busca.trim()) params.set('busca', busca.trim())
+      const res = await fetch(`/api/composicoes?${params.toString()}`)
+      if (!res.ok) {
+        setResultados([])
+        setErro('Não foi possível buscar composições. Tente novamente.')
+        return
+      }
+      const data = await res.json()
+      setResultados(Array.isArray(data) ? data : [])
+    } finally {
+      setBuscando(false)
+    }
   }, [busca])
 
   useEffect(() => {
