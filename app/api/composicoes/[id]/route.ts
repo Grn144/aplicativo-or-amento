@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { calcularCustoDireto, composicaoMudou } from '@/lib/composicoes/calculos'
+import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 
-type MaterialBody = { descricao?: string; quantidade?: number; unidade_id?: string | null; fornecedor?: string | null; preco_unitario?: number }
-type MaoObraBody = { cargo?: string; horas?: number; custo_hora?: number }
 type ComposicaoBody = {
   codigo?: string
   nome?: string
@@ -109,20 +108,8 @@ export async function PUT(
     tags: body.tags ?? [],
     ativo: body.ativo ?? true,
   }
-  const materiaisNovos = materiaisBody.map((m, i) => ({
-    descricao: m.descricao ?? '',
-    quantidade: m.quantidade ?? 0,
-    unidade_id: m.unidade_id || null,
-    fornecedor: m.fornecedor?.trim() || null,
-    preco_unitario: m.preco_unitario ?? 0,
-    ordem: i + 1,
-  }))
-  const maoObraNova = maoObraBody.map((m, i) => ({
-    cargo: m.cargo ?? '',
-    horas: m.horas ?? 0,
-    custo_hora: m.custo_hora ?? 0,
-    ordem: i + 1,
-  }))
+  const materiaisNovos = normalizarMateriais(materiaisBody)
+  const maoObraNova = normalizarMaoObra(maoObraBody)
 
   const camposAntigos = {
     codigo: atual.data.codigo,

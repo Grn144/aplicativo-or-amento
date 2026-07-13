@@ -3,9 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { calcularCustoDireto } from '@/lib/composicoes/calculos'
+import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 
-type MaterialBody = { descricao?: string; quantidade?: number; unidade_id?: string | null; fornecedor?: string | null; preco_unitario?: number }
-type MaoObraBody = { cargo?: string; horas?: number; custo_hora?: number }
 type ComposicaoBody = {
   codigo?: string
   nome?: string
@@ -32,10 +31,11 @@ export async function GET(request: NextRequest) {
   const tag = searchParams.get('tag') ?? ''
   const somenteFavoritos = searchParams.get('favoritos') === 'true'
 
-  const { data: favoritas } = await supabase
+  const { data: favoritas, error: erroFavoritas } = await supabase
     .from('composicoes_favoritas')
     .select('composicao_id')
     .eq('usuario_id', user.id)
+  if (erroFavoritas) return NextResponse.json({ error: erroFavoritas.message }, { status: 500 })
   const idsFavoritos = new Set((favoritas ?? []).map(f => f.composicao_id))
 
   let query = supabase
@@ -110,21 +110,13 @@ export async function POST(request: NextRequest) {
 
   if (erroComposicao) return NextResponse.json({ error: erroComposicao.message }, { status: 500 })
 
-  const materiaisParaInserir = materiais.map((m, i) => ({
+  const materiaisParaInserir = normalizarMateriais(materiais).map(m => ({
+    ...m,
     composicao_id: composicao.id,
-    descricao: m.descricao ?? '',
-    quantidade: m.quantidade ?? 0,
-    unidade_id: m.unidade_id || null,
-    fornecedor: m.fornecedor?.trim() || null,
-    preco_unitario: m.preco_unitario ?? 0,
-    ordem: i + 1,
   }))
-  const maoObraParaInserir = maoObra.map((m, i) => ({
+  const maoObraParaInserir = normalizarMaoObra(maoObra).map(m => ({
+    ...m,
     composicao_id: composicao.id,
-    cargo: m.cargo ?? '',
-    horas: m.horas ?? 0,
-    custo_hora: m.custo_hora ?? 0,
-    ordem: i + 1,
   }))
 
   const [resMateriais, resMaoObra] = await Promise.all([
