@@ -36,6 +36,9 @@ type ObraCompleta = {
       observacao: string | null
       observacao_2: string | null
       ordem: number
+      composicao_id: string | null
+      composicao_versao: number | null
+      composicoes: { versao: number } | null
       unidades_medida: { id: string; sigla: string; descricao: string | null } | null
     }[]
   }[]
@@ -65,6 +68,8 @@ export default async function ObraPage({
             markup_mao_obra, markup_material,
             fee_mao_obra, fee_material,
             observacao, observacao_2, ordem,
+            composicao_id, composicao_versao,
+            composicoes (versao),
             unidades_medida (id, sigla, descricao)
           )
         )
