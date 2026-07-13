@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { calcularGrupo, calcularRentabilidade, calcularTotaisGerais } from '@/lib/calculos'
 import type { Cliente, Disciplina, GrupoOrcamento, ItemOrcamento, UnidadeMedida } from '@/types/database'
 import type { GrupoCalculado, TotaisGerais } from '@/types/orcamento'
+import InserirComposicaoModal from '@/components/composicoes/InserirComposicaoModal'
 import CabecalhoObra from './CabecalhoObra'
 import TabelaOrcamento from './TabelaOrcamento'
 
@@ -38,6 +39,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   )
   const [exportando, setExportando] = useState<'tecnico' | 'comercial' | null>(null)
   const [importando, setImportando] = useState(false)
+  const [modalComposicaoAberto, setModalComposicaoAberto] = useState(false)
   const [disciplinasList, setDisciplinasList] = useState(disciplinas)
   const [unidadesList, setUnidadesList] = useState(unidades)
   const [fatores, setFatores] = useState({
@@ -183,6 +185,15 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     ))
   }
 
+  function itemInseridoPorComposicao(grupoId: string, novoItem: ItemOrcamento & { unidades_medida?: UnidadeMedida | null }) {
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: [...g.itens_orcamento, novoItem],
+      }
+    ))
+  }
+
   async function atualizarUnidade(grupoId: string, itemId: string, sigla: string) {
     const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
       method: 'PUT',
@@ -241,6 +252,14 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         <h2 className="text-base font-semibold">Orçamento</h2>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setModalComposicaoAberto(true)}
+            disabled={grupos.length === 0}
+            className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors"
+            title={grupos.length === 0 ? 'Adicione uma disciplina primeiro' : undefined}
+          >
+            + Inserir Composição
+          </button>
+          <button
             onClick={() => fileInputRef.current?.click()}
             disabled={importando}
             className="px-3 py-1.5 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 transition-colors"
@@ -277,6 +296,14 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         onRemoveGrupo={removerGrupo}
         onAddItem={adicionarItem}
         onRemoveItem={removerItem}
+      />
+
+      <InserirComposicaoModal
+        aberto={modalComposicaoAberto}
+        onOpenChange={setModalComposicaoAberto}
+        obraId={obra.id}
+        grupos={grupos.map(g => ({ id: g.id, letra: g.letra, disciplinas: g.disciplinas }))}
+        onInserido={itemInseridoPorComposicao}
       />
     </div>
   )
