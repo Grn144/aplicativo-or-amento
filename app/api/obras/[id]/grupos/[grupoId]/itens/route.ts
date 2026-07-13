@@ -12,7 +12,7 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  const { grupoId: grupo_id } = await params
+  const { id: obra_id, grupoId: grupo_id } = await params
   const body = await lerJson<{ composicao_id?: string; quantidade?: number }>(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
@@ -68,6 +68,20 @@ export async function POST(
       .single()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Log de uso — não bloqueia a criação do item, que já foi commitada com
+    // sucesso acima. É telemetria suplementar (histórico "quantas vezes essa
+    // composição já foi usada"), não um dado crítico do orçamento.
+    const { error: erroUso } = await supabase.from('composicao_usos').insert({
+      composicao_id: composicaoRes.data.id,
+      composicao_versao: composicaoRes.data.versao,
+      obra_id,
+      usuario_id: user.id,
+    })
+    if (erroUso) {
+      console.error('Falha ao registrar uso da composição:', erroUso.message)
+    }
+
     return NextResponse.json(data, { status: 201 })
   }
 
