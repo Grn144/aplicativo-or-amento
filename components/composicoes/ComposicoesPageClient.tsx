@@ -60,7 +60,11 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
 
   async function alternarFavorito(c: Composicao) {
     setComposicoes(prev => prev.map(x => (x.id === c.id ? { ...x, favorito: !x.favorito } : x)))
-    await fetch(`/api/composicoes/${c.id}/favorito`, { method: c.favorito ? 'DELETE' : 'POST' })
+    const res = await fetch(`/api/composicoes/${c.id}/favorito`, { method: c.favorito ? 'DELETE' : 'POST' })
+    if (!res.ok) {
+      setComposicoes(prev => prev.map(x => (x.id === c.id ? { ...x, favorito: c.favorito } : x)))
+      alert('Não foi possível atualizar o favorito. Tente novamente.')
+    }
   }
 
   async function confirmarExclusao() {
