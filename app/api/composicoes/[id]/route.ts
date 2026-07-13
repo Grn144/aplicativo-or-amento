@@ -38,16 +38,30 @@ export async function GET(
     return NextResponse.json({ error: composicaoRes.error.message }, { status: 500 })
   }
 
-  const { data: favorito } = await supabase
-    .from('composicoes_favoritas')
-    .select('composicao_id')
-    .eq('usuario_id', user.id)
-    .eq('composicao_id', id)
-    .maybeSingle()
+  const [{ data: favorito }, { count: totalUsos }, { data: ultimoUsoRows }] = await Promise.all([
+    supabase
+      .from('composicoes_favoritas')
+      .select('composicao_id')
+      .eq('usuario_id', user.id)
+      .eq('composicao_id', id)
+      .maybeSingle(),
+    supabase
+      .from('composicao_usos')
+      .select('*', { count: 'exact', head: true })
+      .eq('composicao_id', id),
+    supabase
+      .from('composicao_usos')
+      .select('criado_em')
+      .eq('composicao_id', id)
+      .order('criado_em', { ascending: false })
+      .limit(1),
+  ])
 
   return NextResponse.json({
     ...composicaoRes.data,
     favorito: !!favorito,
+    total_usos: totalUsos ?? 0,
+    ultimo_uso: ultimoUsoRows?.[0]?.criado_em ?? null,
     composicao_materiais: materiaisRes.data ?? [],
     composicao_mao_obra: maoObraRes.data ?? [],
   })
