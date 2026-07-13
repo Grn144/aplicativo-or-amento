@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { calcularCustoDireto, mapearComposicaoParaItem, composicaoMudou } from './calculos'
+import { normalizarMateriais } from './normalizar'
 
 describe('calcularCustoDireto', () => {
   it('soma materiais e mão de obra por 1 unidade de referência', () => {
@@ -61,5 +62,46 @@ describe('composicaoMudou', () => {
     const antiga = { campos: {}, materiais: [{ preco_unitario: 10 }], maoDeObra: [] }
     const nova = { campos: {}, materiais: [{ preco_unitario: 12 }], maoDeObra: [] }
     expect(composicaoMudou(antiga, nova)).toBe(true)
+  })
+
+  it('compara materiais normalizados via normalizarMateriais, como no PUT (linhas do banco vs. corpo da requisição)', () => {
+    // Formato "do banco": como viria de uma linha da tabela composicao_materiais (campos extras: id, composicao_id).
+    const materiaisDoBanco = [
+      {
+        id: 'mat-1',
+        composicao_id: 'comp-1',
+        descricao: 'Cabo de rede',
+        quantidade: 10,
+        unidade_id: 'un-m',
+        fornecedor: 'Fornecedor A',
+        preco_unitario: 2.5,
+        ordem: 1,
+      },
+    ]
+    // Formato "do corpo": como viria do cliente no PUT (sem id/composicao_id).
+    const materiaisDoCorpoIguais = [
+      { descricao: 'Cabo de rede', quantidade: 10, unidade_id: 'un-m', fornecedor: 'Fornecedor A', preco_unitario: 2.5 },
+    ]
+    const materiaisDoCorpoComPrecoDiferente = [
+      { descricao: 'Cabo de rede', quantidade: 10, unidade_id: 'un-m', fornecedor: 'Fornecedor A', preco_unitario: 3.0 },
+    ]
+
+    const antigosNormalizados = normalizarMateriais(materiaisDoBanco)
+    const iguaisNormalizados = normalizarMateriais(materiaisDoCorpoIguais)
+    const diferentesNormalizados = normalizarMateriais(materiaisDoCorpoComPrecoDiferente)
+
+    expect(
+      composicaoMudou(
+        { campos: {}, materiais: antigosNormalizados, maoDeObra: [] },
+        { campos: {}, materiais: iguaisNormalizados, maoDeObra: [] }
+      )
+    ).toBe(false)
+
+    expect(
+      composicaoMudou(
+        { campos: {}, materiais: antigosNormalizados, maoDeObra: [] },
+        { campos: {}, materiais: diferentesNormalizados, maoDeObra: [] }
+      )
+    ).toBe(true)
   })
 })
