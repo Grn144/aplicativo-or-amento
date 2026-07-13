@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useRef, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 import { fmt, fmtPct } from '@/lib/format'
 import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
 import type { Disciplina, UnidadeMedida } from '@/types/database'
@@ -79,6 +80,31 @@ function CelulaEditavel({
         ? (valor === null || valor === '' ? '—' : fmt(Number(valor)))
         : String(valor || '—')}
     </div>
+  )
+}
+
+function itemDesatualizado(item: {
+  composicao_id: string | null
+  composicao_versao: number | null
+  composicoes?: { versao: number } | null
+}): boolean {
+  return (
+    !!item.composicao_id &&
+    item.composicao_versao != null &&
+    item.composicoes != null &&
+    item.composicao_versao < item.composicoes.versao
+  )
+}
+
+function IndicadorDesatualizado({ item }: { item: Parameters<typeof itemDesatualizado>[0] }) {
+  if (!itemDesatualizado(item)) return null
+  return (
+    <span
+      title={`Composição atualizada disponível (v${item.composicoes?.versao}) — este item usa a v${item.composicao_versao}`}
+      className="shrink-0 text-amber-500"
+    >
+      <AlertTriangle className="size-3.5" />
+    </span>
   )
 }
 
@@ -164,11 +190,14 @@ export default function TabelaOrcamento({
                       <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
                       <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
                       <td className="px-2 py-1">
-                        <CelulaEditavel
-                          valor={item.descricao}
-                          tipo="text"
-                          onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
-                        />
+                        <div className="flex items-center gap-1">
+                          <CelulaEditavel
+                            valor={item.descricao}
+                            tipo="text"
+                            onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
+                          />
+                          <IndicadorDesatualizado item={item} />
+                        </div>
                       </td>
                       <td className="px-2 py-1">
                         <CelulaEditavel
@@ -370,11 +399,14 @@ export default function TabelaOrcamento({
                     <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
                     <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
                     <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.descricao}
-                        tipo="text"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
-                      />
+                      <div className="flex items-center gap-1">
+                        <CelulaEditavel
+                          valor={item.descricao}
+                          tipo="text"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
+                        />
+                        <IndicadorDesatualizado item={item} />
+                      </div>
                     </td>
                     <td className="px-2 py-1">
                       <CelulaEditavel
