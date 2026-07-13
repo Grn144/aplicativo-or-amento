@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Pencil, Trash2, Star } from 'lucide-react'
+import { Pencil, Trash2, Star, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NativeSelect } from '@/components/ui/native-select'
@@ -25,6 +25,7 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
   const [busca, setBusca] = useState('')
   const [disciplinaId, setDisciplinaId] = useState('')
   const [somenteFavoritos, setSomenteFavoritos] = useState(false)
+  const [ordenar, setOrdenar] = useState('')
   const [carregando, setCarregando] = useState(true)
 
   const [modalAberto, setModalAberto] = useState(false)
@@ -38,11 +39,12 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
     if (busca.trim()) params.set('busca', busca.trim())
     if (disciplinaId) params.set('disciplina_id', disciplinaId)
     if (somenteFavoritos) params.set('favoritos', 'true')
+    if (ordenar) params.set('ordenar', ordenar)
     const res = await fetch(`/api/composicoes?${params.toString()}`)
     const data = await res.json()
     setComposicoes(Array.isArray(data) ? data : [])
     setCarregando(false)
-  }, [busca, disciplinaId, somenteFavoritos])
+  }, [busca, disciplinaId, somenteFavoritos, ordenar])
 
   useEffect(() => {
     const timeout = setTimeout(carregar, 300)
@@ -102,6 +104,10 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
           <input type="checkbox" checked={somenteFavoritos} onChange={e => setSomenteFavoritos(e.target.checked)} />
           Só favoritos
         </label>
+        <NativeSelect value={ordenar} onChange={e => setOrdenar(e.target.value)} className="max-w-[180px]">
+          <option value="">Ordenar por nome</option>
+          <option value="usos">Mais utilizadas</option>
+        </NativeSelect>
       </div>
 
       {carregando ? (
@@ -135,7 +141,16 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
                     </button>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">{c.codigo}</td>
-                  <td className="px-4 py-3 font-medium">{c.nome}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      {c.nome}
+                      {c.incompleta && (
+                        <span title="Composição incompleta — só tem material ou só mão de obra" className="shrink-0 text-amber-500">
+                          <AlertTriangle className="size-3.5" />
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground">{c.disciplinas?.nome ?? '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.unidades_medida?.sigla ?? '—'}</td>
                   <td className="px-4 py-3 text-right">{c.custo_direto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
