@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
-import { calcularCustoDireto, composicaoIncompleta } from '@/lib/composicoes/calculos'
-import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
+import { composicaoIncompleta } from '@/lib/composicoes/calculos'
+import { type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
+import { criarComposicao } from '@/lib/composicoes/criar'
 
 type ComposicaoBody = {
   codigo?: string
@@ -116,74 +117,19 @@ export async function POST(request: NextRequest) {
   const body = await lerJson<ComposicaoBody>(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
 
-  if (!body.codigo?.trim() || !body.nome?.trim() || !body.descricao_tecnica?.trim()) {
-    return NextResponse.json({ error: 'Código, nome e descrição técnica são obrigatórios' }, { status: 400 })
-  }
-  const materiais = body.materiais ?? []
-  const maoObra = body.mao_obra ?? []
-  if (materiais.length === 0 && maoObra.length === 0) {
-    return NextResponse.json(
-      { error: 'A composição precisa ter ao menos um material ou item de mão de obra' },
-      { status: 400 }
-    )
-  }
-
-  const custo_direto = calcularCustoDireto(
-    materiais.map(m => ({ quantidade: m.quantidade ?? 0, preco_unitario: m.preco_unitario ?? 0 })),
-    maoObra.map(m => ({ horas: m.horas ?? 0, custo_hora: m.custo_hora ?? 0 }))
-  )
-
-  const { data: composicao, error: erroComposicao } = await supabase
-    .from('composicoes')
-    .insert({
-      codigo: body.codigo.trim(),
-      nome: body.nome.trim(),
-      disciplina_id: body.disciplina_id || null,
-      descricao_tecnica: body.descricao_tecnica.trim(),
-      unidade_id: body.unidade_id || null,
-      produtividade: body.produtividade?.trim() || null,
-      custo_direto,
-      markup_sugerido: body.markup_sugerido ?? 1,
-      observacoes: body.observacoes?.trim() || null,
-      tags: body.tags ?? [],
-      versao: 1,
-      responsavel_id: user.id,
-    })
-    .select('*, disciplinas(id, nome), unidades_medida(id, sigla)')
-    .single()
-
-  if (erroComposicao) return NextResponse.json({ error: erroComposicao.message }, { status: 500 })
-
-  const materiaisParaInserir = normalizarMateriais(materiais).map(m => ({
-    ...m,
-    composicao_id: composicao.id,
-  }))
-  const maoObraParaInserir = normalizarMaoObra(maoObra).map(m => ({
-    ...m,
-    composicao_id: composicao.id,
-  }))
-
-  const [resMateriais, resMaoObra] = await Promise.all([
-    materiaisParaInserir.length > 0
-      ? supabase.from('composicao_materiais').insert(materiaisParaInserir).select('*, unidades_medida(id, sigla)')
-      : Promise.resolve({ data: [], error: null }),
-    maoObraParaInserir.length > 0
-      ? supabase.from('composicao_mao_obra').insert(maoObraParaInserir).select('*')
-      : Promise.resolve({ data: [], error: null }),
-  ])
-  if (resMateriais.error) return NextResponse.json({ error: resMateriais.error.message }, { status: 500 })
-  if (resMaoObra.error) return NextResponse.json({ error: resMaoObra.error.message }, { status: 500 })
-
-  const { error: erroVersao } = await supabase.from('composicao_versoes').insert({
-    composicao_id: composicao.id,
-    versao: 1,
-    snapshot: { composicao, materiais: resMateriais.data, mao_obra: resMaoObra.data },
-    usuario_id: user.id,
+  const resultado = await criarComposicao(supabase, user.id, {
+    codigo: body.codigo ?? '',
+    nome: body.nome ?? '',
+    disciplina_id: body.disciplina_id ?? null,
+    descricao_tecnica: body.descricao_tecnica ?? '',
+    unidade_id: body.unidade_id ?? null,
+    produtividade: body.produtividade ?? null,
+    markup_sugerido: body.markup_sugerido ?? 1,
+    observacoes: body.observacoes ?? null,
+    tags: body.tags ?? [],
+    materiais: body.materiais ?? [],
+    mao_obra: body.mao_obra ?? [],
   })
-  if (erroVersao) return NextResponse.json({ error: erroVersao.message }, { status: 500 })
 
-  return NextResponse.json(
-    { ...composicao, composicao_materiais: resMateriais.data, composicao_mao_obra: resMaoObra.data },
-    { status: 201 }
-  )
+  return NextResponse.json(resultado.body, { status: resultado.status })
 }
