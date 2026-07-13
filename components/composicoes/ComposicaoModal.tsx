@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { calcularCustoDireto } from '@/lib/composicoes/calculos'
-import type { ComposicaoCompleta, ComposicaoVersao } from '@/types/database'
+import type { ComposicaoCompleta, ComposicaoVersao, ComposicaoUso } from '@/types/database'
 
 type MaterialForm = { descricao: string; quantidade: string; unidade_id: string; fornecedor: string; preco_unitario: string }
 type MaoObraForm = { cargo: string; horas: string; custo_hora: string }
@@ -52,6 +52,8 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   const [materiais, setMateriais] = useState<MaterialForm[]>([])
   const [maoDeObra, setMaoDeObra] = useState<MaoObraForm[]>([])
   const [versoes, setVersoes] = useState<ComposicaoVersao[]>([])
+  const [usos, setUsos] = useState<ComposicaoUso[]>([])
+  const [restaurando, setRestaurando] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
@@ -62,12 +64,14 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
       setMateriais([])
       setMaoDeObra([])
       setVersoes([])
+      setUsos([])
       return
     }
     setCarregando(true)
-    const [resComposicao, resVersoes] = await Promise.all([
+    const [resComposicao, resVersoes, resUsos] = await Promise.all([
       fetch(`/api/composicoes/${composicaoId}`),
       fetch(`/api/composicoes/${composicaoId}/versoes`),
+      fetch(`/api/composicoes/${composicaoId}/usos`),
     ])
     if (!resComposicao.ok) {
       setErro('Não foi possível carregar a composição.')
@@ -102,8 +106,24 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
       }))
     )
     setVersoes(Array.isArray(listaVersoes) ? listaVersoes : [])
+    const listaUsos: ComposicaoUso[] = resUsos.ok ? await resUsos.json() : []
+    setUsos(Array.isArray(listaUsos) ? listaUsos : [])
     setCarregando(false)
   }, [composicaoId])
+
+  async function restaurarVersao(versaoId: string) {
+    if (!composicaoId) return
+    if (!confirm('Restaurar esta versão? Isso cria uma nova versão com o conteúdo da versão selecionada.')) return
+    setRestaurando(versaoId)
+    const res = await fetch(`/api/composicoes/${composicaoId}/versoes/${versaoId}/restaurar`, { method: 'POST' })
+    setRestaurando(null)
+    if (!res.ok) {
+      alert('Não foi possível restaurar essa versão. Tente novamente.')
+      return
+    }
+    await carregar()
+    onSalvo()
+  }
 
   useEffect(() => {
     if (aberto) {
@@ -338,12 +358,41 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
               <div className="space-y-1">
                 <h3 className="text-sm font-semibold">Histórico de versões</h3>
                 <ul className="space-y-1 text-xs text-muted-foreground">
-                  {versoes.map(v => (
-                    <li key={v.id}>
-                      v{v.versao} — {v.usuarios?.nome ?? 'usuário removido'} — {new Date(v.criado_em).toLocaleString('pt-BR')}
+                  {versoes.map((v, i) => (
+                    <li key={v.id} className="flex items-center justify-between gap-2">
+                      <span>
+                        v{v.versao} — {v.usuarios?.nome ?? 'usuário removido'} — {new Date(v.criado_em).toLocaleString('pt-BR')}
+                      </span>
+                      {i > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => restaurarVersao(v.id)}
+                          disabled={restaurando !== null}
+                          className="shrink-0 text-blue-600 hover:underline disabled:opacity-50"
+                        >
+                          {restaurando === v.id ? 'Restaurando...' : 'Restaurar esta versão'}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {composicaoId && (
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold">Histórico de uso</h3>
+                {usos.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Ainda não foi usada em nenhum orçamento.</p>
+                ) : (
+                  <ul className="space-y-1 text-xs text-muted-foreground">
+                    {usos.map(u => (
+                      <li key={u.id}>
+                        {u.obras?.codigo ?? '—'} {u.obras?.nome ?? ''} — {u.usuarios?.nome ?? 'usuário removido'} — {new Date(u.criado_em).toLocaleString('pt-BR')}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
