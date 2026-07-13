@@ -60,8 +60,30 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const comFavorito = (data ?? []).map(c => ({ ...c, favorito: idsFavoritos.has(c.id) }))
-  return NextResponse.json(comFavorito)
+  const idsResultado = (data ?? []).map(c => c.id)
+  const { data: usos, error: erroUsos } = idsResultado.length > 0
+    ? await supabase.from('composicao_usos').select('composicao_id, criado_em').in('composicao_id', idsResultado)
+    : { data: [], error: null }
+  if (erroUsos) return NextResponse.json({ error: erroUsos.message }, { status: 500 })
+
+  const usosPorComposicao = new Map<string, { total: number; ultimo: string }>()
+  for (const uso of usos ?? []) {
+    const atual = usosPorComposicao.get(uso.composicao_id)
+    if (!atual) {
+      usosPorComposicao.set(uso.composicao_id, { total: 1, ultimo: uso.criado_em })
+    } else {
+      atual.total += 1
+      if (uso.criado_em > atual.ultimo) atual.ultimo = uso.criado_em
+    }
+  }
+
+  const comFavoritoEUsos = (data ?? []).map(c => ({
+    ...c,
+    favorito: idsFavoritos.has(c.id),
+    total_usos: usosPorComposicao.get(c.id)?.total ?? 0,
+    ultimo_uso: usosPorComposicao.get(c.id)?.ultimo ?? null,
+  }))
+  return NextResponse.json(comFavoritoEUsos)
 }
 
 export async function POST(request: NextRequest) {
