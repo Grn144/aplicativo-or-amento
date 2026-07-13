@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
-import { calcularCustoDireto } from '@/lib/composicoes/calculos'
+import { calcularCustoDireto, composicaoIncompleta } from '@/lib/composicoes/calculos'
 import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 
 type ComposicaoBody = {
@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
   const disciplinaId = searchParams.get('disciplina_id') ?? ''
   const tag = searchParams.get('tag') ?? ''
   const somenteFavoritos = searchParams.get('favoritos') === 'true'
+  const ordenar = searchParams.get('ordenar') ?? ''
 
   const { data: favoritas, error: erroFavoritas } = await supabase
     .from('composicoes_favoritas')
@@ -77,12 +78,30 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const comFavoritoEUsos = (data ?? []).map(c => ({
+  const { data: materiaisContagem, error: erroMateriais } = idsResultado.length > 0
+    ? await supabase.from('composicao_materiais').select('composicao_id').in('composicao_id', idsResultado)
+    : { data: [], error: null }
+  if (erroMateriais) return NextResponse.json({ error: erroMateriais.message }, { status: 500 })
+  const { data: maoObraContagem, error: erroMaoObra } = idsResultado.length > 0
+    ? await supabase.from('composicao_mao_obra').select('composicao_id').in('composicao_id', idsResultado)
+    : { data: [], error: null }
+  if (erroMaoObra) return NextResponse.json({ error: erroMaoObra.message }, { status: 500 })
+
+  const idsComMateriais = new Set((materiaisContagem ?? []).map(m => m.composicao_id))
+  const idsComMaoObra = new Set((maoObraContagem ?? []).map(m => m.composicao_id))
+
+  let comFavoritoEUsos = (data ?? []).map(c => ({
     ...c,
     favorito: idsFavoritos.has(c.id),
     total_usos: usosPorComposicao.get(c.id)?.total ?? 0,
     ultimo_uso: usosPorComposicao.get(c.id)?.ultimo ?? null,
+    incompleta: composicaoIncompleta(idsComMateriais.has(c.id), idsComMaoObra.has(c.id)),
   }))
+
+  if (ordenar === 'usos') {
+    comFavoritoEUsos = [...comFavoritoEUsos].sort((a, b) => b.total_usos - a.total_usos)
+  }
+
   return NextResponse.json(comFavoritoEUsos)
 }
 
