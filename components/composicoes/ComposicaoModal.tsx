@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { calcularCustoDireto } from '@/lib/composicoes/calculos'
+import { calcularCustoDireto, composicaoIncompleta } from '@/lib/composicoes/calculos'
 import type { ComposicaoCompleta, ComposicaoVersao, ComposicaoUso } from '@/types/database'
 
 type MaterialForm = { descricao: string; quantidade: string; unidade_id: string; fornecedor: string; preco_unitario: string }
@@ -136,6 +136,8 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
     materiais.map(m => ({ quantidade: Number(m.quantidade) || 0, preco_unitario: Number(m.preco_unitario) || 0 })),
     maoDeObra.map(m => ({ horas: Number(m.horas) || 0, custo_hora: Number(m.custo_hora) || 0 }))
   )
+
+  const incompleta = composicaoIncompleta(materiais.length > 0, maoDeObra.length > 0)
 
   function adicionarMaterial() {
     setMateriais(prev => [...prev, { descricao: '', quantidade: '', unidade_id: '', fornecedor: '', preco_unitario: '' }])
@@ -353,6 +355,13 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
             <p className="text-sm font-medium">
               Custo direto (por 1 unidade): {custoDiretoPreview.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
+
+            {incompleta && (
+              <p className="flex items-center gap-1.5 text-sm text-amber-600">
+                <AlertTriangle className="size-4 shrink-0" />
+                Composição incompleta — tem só material ou só mão de obra.
+              </p>
+            )}
 
             {versoes.length > 0 && (
               <div className="space-y-1">
