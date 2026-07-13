@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { calcularCustoDireto, mapearComposicaoParaItem, composicaoMudou } from './calculos'
+import { calcularCustoDireto, mapearComposicaoParaItem, composicaoMudou, composicaoIncompleta } from './calculos'
 import { normalizarMateriais } from './normalizar'
 
 describe('calcularCustoDireto', () => {
@@ -103,5 +103,19 @@ describe('composicaoMudou', () => {
         { campos: {}, materiais: diferentesNormalizados, maoDeObra: [] }
       )
     ).toBe(true)
+  })
+})
+
+describe('composicaoIncompleta', () => {
+  it('retorna false quando tem materiais e mão de obra', () => {
+    expect(composicaoIncompleta(true, true)).toBe(false)
+  })
+
+  it('retorna true quando só tem materiais', () => {
+    expect(composicaoIncompleta(true, false)).toBe(true)
+  })
+
+  it('retorna true quando só tem mão de obra', () => {
+    expect(composicaoIncompleta(false, true)).toBe(true)
   })
 })

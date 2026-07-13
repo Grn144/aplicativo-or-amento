@@ -64,3 +64,10 @@ export function composicaoMudou(antiga: SnapshotComparavel, nova: SnapshotCompar
     JSON.stringify(antiga.maoDeObra) !== JSON.stringify(nova.maoDeObra)
   )
 }
+
+/** Uma composição é "incompleta" quando tem materiais mas nenhuma mão de
+ * obra, ou mão de obra mas nenhum material — nunca os dois vazios (isso já
+ * é bloqueado ao salvar a composição desde a B1). */
+export function composicaoIncompleta(temMateriais: boolean, temMaoObra: boolean): boolean {
+  return temMateriais !== temMaoObra
+}
