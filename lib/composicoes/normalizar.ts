@@ -67,6 +67,9 @@ export interface CamposEditaveisComposicao {
   observacoes: string | null
   tags: string[]
   ativo: boolean
+  // Índice permite usar o resultado onde se espera Record<string, unknown>
+  // (ex.: composicaoMudou em lib/composicoes/calculos.ts).
+  [key: string]: unknown
 }
 
 type SnapshotComposicaoParcial = {
