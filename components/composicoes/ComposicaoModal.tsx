@@ -69,8 +69,13 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
       fetch(`/api/composicoes/${composicaoId}`),
       fetch(`/api/composicoes/${composicaoId}/versoes`),
     ])
+    if (!resComposicao.ok) {
+      setErro('Não foi possível carregar a composição.')
+      setCarregando(false)
+      return
+    }
     const composicao: ComposicaoCompleta = await resComposicao.json()
-    const listaVersoes: ComposicaoVersao[] = await resVersoes.json()
+    const listaVersoes: ComposicaoVersao[] = resVersoes.ok ? await resVersoes.json() : []
     setForm({
       codigo: composicao.codigo,
       nome: composicao.nome,
