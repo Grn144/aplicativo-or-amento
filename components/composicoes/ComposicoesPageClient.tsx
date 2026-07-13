@@ -121,6 +121,8 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
                 <th className="px-4 py-3 font-medium text-right">Custo direto</th>
                 <th className="px-4 py-3 font-medium text-right">Markup</th>
                 <th className="px-4 py-3 font-medium text-center">Versão</th>
+                <th className="px-4 py-3 font-medium text-center">Usos</th>
+                <th className="px-4 py-3 font-medium">Último uso</th>
                 <th className="w-24 px-4 py-3 font-medium text-center">Ações</th>
               </tr>
             </thead>
@@ -139,6 +141,10 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
                   <td className="px-4 py-3 text-right">{c.custo_direto.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
                   <td className="px-4 py-3 text-right">{c.markup_sugerido}</td>
                   <td className="px-4 py-3 text-center text-muted-foreground">v{c.versao}</td>
+                  <td className="px-4 py-3 text-center text-muted-foreground">{c.total_usos ?? 0}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
+                    {c.ultimo_uso ? new Date(c.ultimo_uso).toLocaleDateString('pt-BR') : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-center gap-1">
                       <button type="button" aria-label={`Editar ${c.nome}`} onClick={() => abrirEdicao(c)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
