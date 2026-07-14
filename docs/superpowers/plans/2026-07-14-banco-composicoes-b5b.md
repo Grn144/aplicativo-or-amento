@@ -933,20 +933,50 @@ Adicione logo depois (ainda antes do próximo `<div className="grid grid-cols-3 
 
 - [ ] **Step 5: Renderizar o modal aninhado de visualização**
 
-No fim do arquivo, logo antes do `</Dialog>` que fecha o componente (a última linha antes de `)` e `}`), adicione uma segunda instância do próprio `ComposicaoModal` pra visualizar a composição semelhante escolhida, sem sair do fluxo de criação atual:
+**Atenção — isto precisa ser montado condicionalmente, não sempre-presente com um prop booleano.** `ComposicaoModal` é usado aqui dentro de si mesmo: se a segunda instância existir sempre no JSX (só alternando um prop `aberto`), toda instância — incluindo a aninhada — também renderiza sua própria segunda instância, que renderiza outra, infinitamente, e o React tenta montar essa árvore infinita mesmo com os diálogos fechados (React monta o componente independente de `aberto` esconder ou não o `Dialog` visualmente). O jeito correto é só criar (montar) a instância aninhada quando `composicaoParaVisualizar !== null` — cada instância aninhada nasce com seu próprio estado `composicaoParaVisualizar` zerado (`null`), então ela só monta uma terceira instância se o próprio usuário clicar em outra sugestão dentro dela, o que nunca acontece na prática (o modal aninhado sempre abre com `composicaoId` preenchido, ou seja, em modo de edição — e a busca de semelhantes só roda no modo de criação, então a lista de sugestões dentro do modal aninhado fica sempre vazia e `ListaSugestoesSemelhantes` nunca renderiza nada ali).
+
+Localize o início do `return` do componente:
 
 ```tsx
-      <ComposicaoModal
-        aberto={composicaoParaVisualizar !== null}
-        onOpenChange={aberto => { if (!aberto) setComposicaoParaVisualizar(null) }}
-        composicaoId={composicaoParaVisualizar}
-        disciplinas={disciplinas}
-        unidades={unidades}
-        onSalvo={onSalvo}
-      />
+  return (
+    <Dialog open={aberto} onOpenChange={onOpenChange}>
 ```
 
-(Isso deve ficar dentro do `return (...)` do componente, como irmão do `<Dialog>` principal — não aninhado dentro dele.)
+Substitua por (envolve tudo num `Fragment` — o conteúdo interno do `<Dialog>...</Dialog>` não muda nada, só ganha um nível a mais de aninhamento ao redor; não é preciso reindentar o conteúdo interno inalterado):
+
+```tsx
+  return (
+    <>
+      <Dialog open={aberto} onOpenChange={onOpenChange}>
+```
+
+Localize o final do `return` do componente (a última linha antes do `)` e `}` que fecham a função):
+
+```tsx
+    </Dialog>
+  )
+}
+```
+
+Substitua por:
+
+```tsx
+      </Dialog>
+
+      {composicaoParaVisualizar !== null && (
+        <ComposicaoModal
+          aberto={true}
+          onOpenChange={aberto => { if (!aberto) setComposicaoParaVisualizar(null) }}
+          composicaoId={composicaoParaVisualizar}
+          disciplinas={disciplinas}
+          unidades={unidades}
+          onSalvo={onSalvo}
+        />
+      )}
+    </>
+  )
+}
+```
 
 - [ ] **Step 6: Adicionar o import**
 
