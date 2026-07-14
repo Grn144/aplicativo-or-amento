@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { calcularCustoDireto, composicaoIncompleta } from '@/lib/composicoes/calculos'
+import { ListaSugestoesSemelhantes } from './ListaSugestoesSemelhantes'
 import type { ComposicaoCompleta, ComposicaoVersao, ComposicaoUso } from '@/types/database'
 
 type MaterialForm = { descricao: string; quantidade: string; unidade_id: string; fornecedor: string; preco_unitario: string }
@@ -57,6 +58,11 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   const [carregando, setCarregando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  const [composicoesSemelhantes, setComposicoesSemelhantes] = useState<
+    { id: string; codigo: string; nome: string; disciplina_nome: string | null }[]
+  >([])
+  const [semelhantesDispensado, setSemelhantesDispensado] = useState(false)
+  const [composicaoParaVisualizar, setComposicaoParaVisualizar] = useState<string | null>(null)
 
   const carregar = useCallback(async () => {
     if (!composicaoId) {
@@ -128,9 +134,23 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   useEffect(() => {
     if (aberto) {
       setErro('')
+      setSemelhantesDispensado(false)
       carregar()
     }
   }, [aberto, carregar])
+
+  useEffect(() => {
+    if (composicaoId) { setComposicoesSemelhantes([]); return } // só ao criar
+    if (semelhantesDispensado) return
+    if (!form.nome.trim() || !form.descricao_tecnica.trim()) { setComposicoesSemelhantes([]); return }
+    const timeout = setTimeout(async () => {
+      const params = new URLSearchParams({ texto: `${form.nome} ${form.descricao_tecnica}` })
+      const res = await fetch(`/api/composicoes/semelhantes?${params}`)
+      if (res.ok) setComposicoesSemelhantes(await res.json())
+    }, 300)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composicaoId, form.nome, form.descricao_tecnica, semelhantesDispensado])
 
   const custoDiretoPreview = calcularCustoDireto(
     materiais.map(m => ({ quantidade: Number(m.quantidade) || 0, preco_unitario: Number(m.preco_unitario) || 0 })),
@@ -213,7 +233,8 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] w-full max-w-2xl overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{composicaoId ? 'Editar composição' : 'Nova composição'}</DialogTitle>
@@ -258,6 +279,25 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
                 rows={3}
               />
             </div>
+
+            {!composicaoId && (
+              <ListaSugestoesSemelhantes
+                titulo="Composições parecidas já cadastradas"
+                itens={composicoesSemelhantes}
+                renderItem={c => (
+                  <span>
+                    <span className="font-mono text-[10px] text-muted-foreground">{c.codigo}</span>{' '}
+                    {c.nome}
+                    {c.disciplina_nome ? ` — ${c.disciplina_nome}` : ''}
+                  </span>
+                )}
+                onSelecionar={c => setComposicaoParaVisualizar(c.id)}
+                onDispensar={() => {
+                  setSemelhantesDispensado(true)
+                  setComposicoesSemelhantes([])
+                }}
+              />
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-1">
@@ -416,6 +456,18 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+
+      {composicaoParaVisualizar !== null && (
+        <ComposicaoModal
+          aberto={true}
+          onOpenChange={aberto => { if (!aberto) setComposicaoParaVisualizar(null) }}
+          composicaoId={composicaoParaVisualizar}
+          disciplinas={disciplinas}
+          unidades={unidades}
+          onSalvo={onSalvo}
+        />
+      )}
+    </>
   )
 }
