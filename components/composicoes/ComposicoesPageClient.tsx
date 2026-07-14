@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Pencil, Trash2, Star, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function ComposicoesPageClient({ disciplinas, unidades }: Props) {
+  const router = useRouter()
   const [composicoes, setComposicoes] = useState<Composicao[]>([])
   const [busca, setBusca] = useState('')
   const [disciplinaId, setDisciplinaId] = useState('')
@@ -135,6 +137,9 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Composições</h1>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => router.push('/composicoes/dashboard')}>
+            Ver indicadores
+          </Button>
           <Button variant="outline" onClick={exportar} disabled={exportando}>
             ↓ Exportar
           </Button>
