@@ -63,6 +63,11 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   >([])
   const [semelhantesDispensado, setSemelhantesDispensado] = useState(false)
   const [composicaoParaVisualizar, setComposicaoParaVisualizar] = useState<string | null>(null)
+  const [linhaAtivaMaterial, setLinhaAtivaMaterial] = useState<number | null>(null)
+  const [materiaisSemelhantes, setMateriaisSemelhantes] = useState<
+    Record<number, { descricao: string; fornecedor: string | null; preco_unitario: number }[]>
+  >({})
+  const [materiaisDispensados, setMateriaisDispensados] = useState<Set<number>>(new Set())
 
   const carregar = useCallback(async () => {
     if (!composicaoId) {
@@ -135,6 +140,9 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
     if (aberto) {
       setErro('')
       setSemelhantesDispensado(false)
+      setLinhaAtivaMaterial(null)
+      setMateriaisSemelhantes({})
+      setMateriaisDispensados(new Set())
       carregar()
     }
   }, [aberto, carregar])
@@ -151,6 +159,28 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
     return () => clearTimeout(timeout)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composicaoId, form.nome, form.descricao_tecnica, semelhantesDispensado])
+
+  useEffect(() => {
+    if (linhaAtivaMaterial === null) return
+    if (materiaisDispensados.has(linhaAtivaMaterial)) return
+    const material = materiais[linhaAtivaMaterial]
+    const texto = material?.descricao.trim() ?? ''
+    if (!texto) {
+      setMateriaisSemelhantes(prev => ({ ...prev, [linhaAtivaMaterial]: [] }))
+      return
+    }
+    const timeout = setTimeout(async () => {
+      const params = new URLSearchParams({ texto })
+      if (composicaoId) params.set('excluir_composicao_id', composicaoId)
+      const res = await fetch(`/api/composicoes/materiais-semelhantes?${params}`)
+      if (res.ok) {
+        const resultado = await res.json()
+        setMateriaisSemelhantes(prev => ({ ...prev, [linhaAtivaMaterial]: resultado }))
+      }
+    }, 300)
+    return () => clearTimeout(timeout)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linhaAtivaMaterial, materiais[linhaAtivaMaterial ?? -1]?.descricao, materiaisDispensados, composicaoId])
 
   const custoDiretoPreview = calcularCustoDireto(
     materiais.map(m => ({ quantidade: Number(m.quantidade) || 0, preco_unitario: Number(m.preco_unitario) || 0 })),
@@ -328,35 +358,64 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
                 </Button>
               </div>
               {materiais.map((m, i) => (
-                <div key={i} className="grid grid-cols-12 items-end gap-2 rounded-lg border border-border p-2">
-                  <div className="col-span-4 space-y-1">
-                    <Label className="text-xs">Descrição</Label>
-                    <Input value={m.descricao} onChange={e => atualizarMaterial(i, 'descricao', e.target.value)} />
+                <div key={i} className="space-y-1.5">
+                  <div className="grid grid-cols-12 items-end gap-2 rounded-lg border border-border p-2">
+                    <div className="col-span-4 space-y-1">
+                      <Label className="text-xs">Descrição</Label>
+                      <Input
+                        value={m.descricao}
+                        onFocus={() => setLinhaAtivaMaterial(i)}
+                        onChange={e => atualizarMaterial(i, 'descricao', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-xs">Qtd.</Label>
+                      <Input type="number" step="0.0001" value={m.quantidade} onChange={e => atualizarMaterial(i, 'quantidade', e.target.value)} />
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-xs">Unidade</Label>
+                      <NativeSelect value={m.unidade_id} onChange={e => atualizarMaterial(i, 'unidade_id', e.target.value)}>
+                        <option value="">—</option>
+                        {unidades.map(u => <option key={u.id} value={u.id}>{u.sigla}</option>)}
+                      </NativeSelect>
+                    </div>
+                    <div className="col-span-2 space-y-1">
+                      <Label className="text-xs">Fornecedor</Label>
+                      <Input value={m.fornecedor} onChange={e => atualizarMaterial(i, 'fornecedor', e.target.value)} />
+                    </div>
+                    <div className="col-span-1 space-y-1">
+                      <Label className="text-xs">Preço unit.</Label>
+                      <Input type="number" step="0.0001" value={m.preco_unitario} onChange={e => atualizarMaterial(i, 'preco_unitario', e.target.value)} />
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <button type="button" aria-label="Remover material" onClick={() => removerMaterial(i)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-600">
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">Qtd.</Label>
-                    <Input type="number" step="0.0001" value={m.quantidade} onChange={e => atualizarMaterial(i, 'quantidade', e.target.value)} />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">Unidade</Label>
-                    <NativeSelect value={m.unidade_id} onChange={e => atualizarMaterial(i, 'unidade_id', e.target.value)}>
-                      <option value="">—</option>
-                      {unidades.map(u => <option key={u.id} value={u.id}>{u.sigla}</option>)}
-                    </NativeSelect>
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-xs">Fornecedor</Label>
-                    <Input value={m.fornecedor} onChange={e => atualizarMaterial(i, 'fornecedor', e.target.value)} />
-                  </div>
-                  <div className="col-span-1 space-y-1">
-                    <Label className="text-xs">Preço unit.</Label>
-                    <Input type="number" step="0.0001" value={m.preco_unitario} onChange={e => atualizarMaterial(i, 'preco_unitario', e.target.value)} />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
-                    <button type="button" aria-label="Remover material" onClick={() => removerMaterial(i)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-500/10 hover:text-red-600">
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
+                  {linhaAtivaMaterial === i && (materiaisSemelhantes[i]?.length ?? 0) > 0 && (
+                    <ListaSugestoesSemelhantes
+                      titulo="Materiais parecidos em outras composições"
+                      itens={materiaisSemelhantes[i] ?? []}
+                      renderItem={mat => (
+                        <span>
+                          {mat.descricao}
+                          {mat.fornecedor ? ` — ${mat.fornecedor}` : ''} —{' '}
+                          {mat.preco_unitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                      )}
+                      onSelecionar={mat => {
+                        atualizarMaterial(i, 'descricao', mat.descricao)
+                        atualizarMaterial(i, 'preco_unitario', String(mat.preco_unitario))
+                        setMateriaisDispensados(prev => new Set(prev).add(i))
+                        setMateriaisSemelhantes(prev => ({ ...prev, [i]: [] }))
+                      }}
+                      onDispensar={() => {
+                        setMateriaisDispensados(prev => new Set(prev).add(i))
+                        setMateriaisSemelhantes(prev => ({ ...prev, [i]: [] }))
+                      }}
+                    />
+                  )}
                 </div>
               ))}
             </div>
