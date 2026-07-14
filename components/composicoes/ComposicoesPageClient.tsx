@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Pencil, Trash2, Star, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +33,14 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
   const [excluindo, setExcluindo] = useState<Composicao | null>(null)
   const [removendo, setRemovendo] = useState(false)
 
+  const [exportando, setExportando] = useState(false)
+  const [importando, setImportando] = useState(false)
+  const [resultadoImportacao, setResultadoImportacao] = useState<{
+    criadas: number
+    erros: { linha: number; codigo: string | null; motivo: string }[]
+  } | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const carregar = useCallback(async () => {
     setCarregando(true)
     const params = new URLSearchParams()
@@ -45,6 +53,38 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
     setComposicoes(Array.isArray(data) ? data : [])
     setCarregando(false)
   }, [busca, disciplinaId, somenteFavoritos, ordenar])
+
+  function exportar() {
+    setExportando(true)
+    const params = new URLSearchParams()
+    if (busca.trim()) params.set('busca', busca.trim())
+    if (disciplinaId) params.set('disciplina_id', disciplinaId)
+    if (somenteFavoritos) params.set('favoritos', 'true')
+    window.location.href = `/api/composicoes/export?${params.toString()}`
+    setExportando(false)
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+
+    setImportando(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch('/api/composicoes/import', { method: 'POST', body: form })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(`Erro ao importar: ${data.error}`)
+        return
+      }
+      setResultadoImportacao(data)
+      carregar()
+    } finally {
+      setImportando(false)
+    }
+  }
 
   useEffect(() => {
     const timeout = setTimeout(carregar, 300)
@@ -84,9 +124,25 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
 
   return (
     <div className="p-6">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx"
+        className="hidden"
+        onChange={handleImportFile}
+      />
+
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Composições</h1>
-        <Button onClick={abrirNovo}>+ Nova composição</Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportar} disabled={exportando}>
+            ↓ Exportar
+          </Button>
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importando}>
+            {importando ? 'Importando...' : '↑ Importar planilha'}
+          </Button>
+          <Button onClick={abrirNovo}>+ Nova composição</Button>
+        </div>
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -200,6 +256,34 @@ export default function ComposicoesPageClient({ disciplinas, unidades }: Props) 
             <Button onClick={confirmarExclusao} disabled={removendo} className="bg-red-600 text-white hover:bg-red-700">
               {removendo ? 'Excluindo...' : 'Excluir'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={resultadoImportacao !== null} onOpenChange={aberto => !aberto && setResultadoImportacao(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resultado da importação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-sm">
+            <p>
+              <strong className="text-foreground">{resultadoImportacao?.criadas ?? 0}</strong> composição(ões) criada(s) com sucesso.
+            </p>
+            {resultadoImportacao && resultadoImportacao.erros.length > 0 && (
+              <div>
+                <p className="mb-1 font-medium text-foreground">{resultadoImportacao.erros.length} linha(s) com erro:</p>
+                <ul className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border p-2 text-muted-foreground">
+                  {resultadoImportacao.erros.map((erro, i) => (
+                    <li key={i}>
+                      Linha {erro.linha}{erro.codigo ? ` (${erro.codigo})` : ''}: {erro.motivo}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setResultadoImportacao(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
