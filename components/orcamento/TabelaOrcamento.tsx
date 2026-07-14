@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react'
 import { fmt, fmtPct } from '@/lib/format'
 import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
 import type { Disciplina, UnidadeMedida } from '@/types/database'
+import { ListaSugestoesSemelhantes } from '@/components/composicoes/ListaSugestoesSemelhantes'
 
 interface Props {
   gruposCalculados: GrupoCalculado[]
@@ -19,6 +20,7 @@ interface Props {
   onRemoveGrupo: (grupoId: string) => Promise<void>
   onAddItem: (grupoId: string) => Promise<void>
   onRemoveItem: (grupoId: string, itemId: string) => Promise<void>
+  onConverterParaComposicao: (grupoId: string, itemId: string, composicaoId: string, quantidade: number) => Promise<void>
 }
 
 function CelulaEditavel({
@@ -120,9 +122,30 @@ export default function TabelaOrcamento({
   onRemoveGrupo,
   onAddItem,
   onRemoveItem,
+  onConverterParaComposicao,
 }: Props) {
   const [adicionandoDisciplina, setAdicionandoDisciplina] = useState(false)
   const [nomeDisciplina, setNomeDisciplina] = useState('')
+  const [sugestaoItemId, setSugestaoItemId] = useState<string | null>(null)
+  const [sugestoesComposicoes, setSugestoesComposicoes] = useState<{ id: string; nome: string }[]>([])
+  const [itensComSugestaoDispensada, setItensComSugestaoDispensada] = useState<Set<string>>(new Set())
+
+  async function buscarSugestoesParaItem(itemId: string, descricao: string, composicaoId: string | null) {
+    if (composicaoId) return // item já vinculado a uma composição, não sugere de novo
+    if (itensComSugestaoDispensada.has(itemId)) return
+    const texto = descricao.trim()
+    if (!texto) return
+    const params = new URLSearchParams({ texto, limite: '3' })
+    const res = await fetch(`/api/composicoes/semelhantes?${params}`)
+    if (!res.ok) return
+    const resultados = await res.json()
+    if (Array.isArray(resultados) && resultados.length > 0) {
+      setSugestoesComposicoes(resultados)
+      setSugestaoItemId(itemId)
+    } else {
+      setSugestaoItemId(prev => (prev === itemId ? null : prev))
+    }
+  }
 
   async function confirmarAdicionarDisciplina() {
     const nome = nomeDisciplina.trim()
@@ -186,69 +209,93 @@ export default function TabelaOrcamento({
                     </td>
                   </tr>
                   {grupo.itens_calculados.map(item => (
-                    <tr key={item.id} className="hover:bg-muted/50 border-b border-border/50">
-                      <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
-                      <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
-                      <td className="px-2 py-1">
-                        <div className="flex items-center gap-1">
+                    <Fragment key={item.id}>
+                      <tr className="hover:bg-muted/50 border-b border-border/50">
+                        <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
+                        <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
+                        <td className="px-2 py-1">
+                          <div className="flex items-center gap-1">
+                            <CelulaEditavel
+                              valor={item.descricao}
+                              tipo="text"
+                              onSave={v => {
+                                onUpdateItem(grupo.id, item.id, 'descricao', v)
+                                buscarSugestoesParaItem(item.id, v, item.composicao_id)
+                              }}
+                            />
+                            <IndicadorDesatualizado item={item} />
+                          </div>
+                        </td>
+                        <td className="px-2 py-1">
                           <CelulaEditavel
-                            valor={item.descricao}
+                            valor={item.local ?? ''}
                             tipo="text"
-                            onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
+                            onSave={v => onUpdateItem(grupo.id, item.id, 'local', v || null)}
                           />
-                          <IndicadorDesatualizado item={item} />
-                        </div>
-                      </td>
-                      <td className="px-2 py-1">
-                        <CelulaEditavel
-                          valor={item.local ?? ''}
-                          tipo="text"
-                          onSave={v => onUpdateItem(grupo.id, item.id, 'local', v || null)}
-                        />
-                      </td>
-                      <td className="px-2 py-1 text-center">
-                        <input
-                          key={item.unidade_id ?? 'sem-unidade'}
-                          list="lista-unidades"
-                          defaultValue={item.unidades_medida?.sigla ?? ''}
-                          onBlur={e => {
-                            const nova = e.target.value.trim().toUpperCase()
-                            if (nova !== (item.unidades_medida?.sigla ?? '')) {
-                              onUpdateUnidade(grupo.id, item.id, nova)
-                            }
-                          }}
-                          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-                          placeholder="—"
-                          className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
-                        />
-                      </td>
-                      <td className="px-2 py-1">
-                        <CelulaEditavel
-                          valor={item.quantidade}
-                          tipo="number"
-                          className="text-right"
-                          onSave={v => onUpdateItem(grupo.id, item.id, 'quantidade', parseFloat(v) || 0)}
-                        />
-                      </td>
-                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                        {fmt(item.preco_unit_mao_obra_venda)}
-                      </td>
-                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                        {fmt(item.preco_unit_material_venda)}
-                      </td>
-                      <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
-                      <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_material_venda)}</td>
-                      <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
-                      <td className="px-2 py-1 text-center">
-                        <button
-                          onClick={() => onRemoveItem(grupo.id, item.id)}
-                          className="text-red-300 hover:text-red-500"
-                          title="Remover item"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="px-2 py-1 text-center">
+                          <input
+                            key={item.unidade_id ?? 'sem-unidade'}
+                            list="lista-unidades"
+                            defaultValue={item.unidades_medida?.sigla ?? ''}
+                            onBlur={e => {
+                              const nova = e.target.value.trim().toUpperCase()
+                              if (nova !== (item.unidades_medida?.sigla ?? '')) {
+                                onUpdateUnidade(grupo.id, item.id, nova)
+                              }
+                            }}
+                            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                            placeholder="—"
+                            className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
+                          />
+                        </td>
+                        <td className="px-2 py-1">
+                          <CelulaEditavel
+                            valor={item.quantidade}
+                            tipo="number"
+                            className="text-right"
+                            onSave={v => onUpdateItem(grupo.id, item.id, 'quantidade', parseFloat(v) || 0)}
+                          />
+                        </td>
+                        <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                          {fmt(item.preco_unit_mao_obra_venda)}
+                        </td>
+                        <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                          {fmt(item.preco_unit_material_venda)}
+                        </td>
+                        <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
+                        <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_material_venda)}</td>
+                        <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
+                        <td className="px-2 py-1 text-center">
+                          <button
+                            onClick={() => onRemoveItem(grupo.id, item.id)}
+                            className="text-red-300 hover:text-red-500"
+                            title="Remover item"
+                          >
+                            ×
+                          </button>
+                        </td>
+                      </tr>
+                      {sugestaoItemId === item.id && (
+                        <tr>
+                          <td colSpan={colsComercial + 1} className="px-2 py-1">
+                            <ListaSugestoesSemelhantes
+                              titulo="Composições parecidas"
+                              itens={sugestoesComposicoes}
+                              renderItem={c => <span>{c.nome}</span>}
+                              onSelecionar={c => {
+                                onConverterParaComposicao(grupo.id, item.id, c.id, item.quantidade)
+                                setSugestaoItemId(null)
+                              }}
+                              onDispensar={() => {
+                                setItensComSugestaoDispensada(prev => new Set(prev).add(item.id))
+                                setSugestaoItemId(null)
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                   <tr>
                     <td colSpan={colsComercial + 1} className="px-2 py-1 border-b border-border/50">
@@ -395,125 +442,149 @@ export default function TabelaOrcamento({
                   </td>
                 </tr>
                 {grupo.itens_calculados.map(item => (
-                  <tr key={item.id} className="hover:bg-muted/50 border-b border-border/50">
-                    <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
-                    <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
-                    <td className="px-2 py-1">
-                      <div className="flex items-center gap-1">
+                  <Fragment key={item.id}>
+                    <tr className="hover:bg-muted/50 border-b border-border/50">
+                      <td className="px-2 py-1 text-muted-foreground">{grupo.letra}</td>
+                      <td className="px-2 py-1 text-muted-foreground">{item.numero}</td>
+                      <td className="px-2 py-1">
+                        <div className="flex items-center gap-1">
+                          <CelulaEditavel
+                            valor={item.descricao}
+                            tipo="text"
+                            onSave={v => {
+                              onUpdateItem(grupo.id, item.id, 'descricao', v)
+                              buscarSugestoesParaItem(item.id, v, item.composicao_id)
+                            }}
+                          />
+                          <IndicadorDesatualizado item={item} />
+                        </div>
+                      </td>
+                      <td className="px-2 py-1">
                         <CelulaEditavel
-                          valor={item.descricao}
+                          valor={item.local ?? ''}
                           tipo="text"
-                          onSave={v => onUpdateItem(grupo.id, item.id, 'descricao', v)}
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'local', v || null)}
                         />
-                        <IndicadorDesatualizado item={item} />
-                      </div>
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.local ?? ''}
-                        tipo="text"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'local', v || null)}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <input
-                        key={item.unidade_id ?? 'sem-unidade'}
-                        list="lista-unidades"
-                        defaultValue={item.unidades_medida?.sigla ?? ''}
-                        onBlur={e => {
-                          const nova = e.target.value.trim().toUpperCase()
-                          if (nova !== (item.unidades_medida?.sigla ?? '')) {
-                            onUpdateUnidade(grupo.id, item.id, nova)
-                          }
-                        }}
-                        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
-                        placeholder="—"
-                        className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.quantidade}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'quantidade', parseFloat(v) || 0)}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.custo_unit_mao_obra}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'custo_unit_mao_obra', parseFloat(v) || 0)}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.custo_unit_material}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'custo_unit_material', parseFloat(v) || 0)}
-                      />
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono">{fmt(item.total_custo)}</td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.markup_mao_obra}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_mao_obra', parseFloat(v) || 1)}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.markup_material}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 1)}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.fee_mao_obra}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'fee_mao_obra', v.trim() === '' ? null : parseFloat(v))}
-                      />
-                    </td>
-                    <td className="px-2 py-1">
-                      <CelulaEditavel
-                        valor={item.fee_material}
-                        tipo="number"
-                        className="text-right"
-                        onSave={v => onUpdateItem(grupo.id, item.id, 'fee_material', v.trim() === '' ? null : parseFloat(v))}
-                      />
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                      {fmt(item.fee_unit_mao_obra)}
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                      {fmt(item.preco_unit_mao_obra_venda)}
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                      {fmt(item.fee_unit_material)}
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono text-muted-foreground">
-                      {fmt(item.preco_unit_material_venda)}
-                    </td>
-                    <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
-                    <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_material_venda)}</td>
-                    <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
-                    <td className="px-2 py-1 text-right font-mono">{fmt(item.lucro)}</td>
-                    <td className="px-2 py-1 text-right font-mono">{fmtPct(item.margem_efetiva_pct)}</td>
-                    <td className="px-2 py-1 text-center">
-                      <button
-                        onClick={() => onRemoveItem(grupo.id, item.id)}
-                        className="text-red-300 hover:text-red-500"
-                      >
-                        ×
-                      </button>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-2 py-1">
+                        <input
+                          key={item.unidade_id ?? 'sem-unidade'}
+                          list="lista-unidades"
+                          defaultValue={item.unidades_medida?.sigla ?? ''}
+                          onBlur={e => {
+                            const nova = e.target.value.trim().toUpperCase()
+                            if (nova !== (item.unidades_medida?.sigla ?? '')) {
+                              onUpdateUnidade(grupo.id, item.id, nova)
+                            }
+                          }}
+                          onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                          placeholder="—"
+                          className="w-14 h-6 rounded border border-input bg-background px-1 text-xs text-center uppercase"
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.quantidade}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'quantidade', parseFloat(v) || 0)}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.custo_unit_mao_obra}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'custo_unit_mao_obra', parseFloat(v) || 0)}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.custo_unit_material}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'custo_unit_material', parseFloat(v) || 0)}
+                        />
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono">{fmt(item.total_custo)}</td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.markup_mao_obra}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'markup_mao_obra', parseFloat(v) || 1)}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.markup_material}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'markup_material', parseFloat(v) || 1)}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.fee_mao_obra}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'fee_mao_obra', v.trim() === '' ? null : parseFloat(v))}
+                        />
+                      </td>
+                      <td className="px-2 py-1">
+                        <CelulaEditavel
+                          valor={item.fee_material}
+                          tipo="number"
+                          className="text-right"
+                          onSave={v => onUpdateItem(grupo.id, item.id, 'fee_material', v.trim() === '' ? null : parseFloat(v))}
+                        />
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                        {fmt(item.fee_unit_mao_obra)}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                        {fmt(item.preco_unit_mao_obra_venda)}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                        {fmt(item.fee_unit_material)}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono text-muted-foreground">
+                        {fmt(item.preco_unit_material_venda)}
+                      </td>
+                      <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_mao_obra_venda)}</td>
+                      <td className="px-2 py-1 text-right font-mono">{fmt(item.subtotal_material_venda)}</td>
+                      <td className="px-2 py-1 text-right font-mono font-semibold">{fmt(item.total_venda)}</td>
+                      <td className="px-2 py-1 text-right font-mono">{fmt(item.lucro)}</td>
+                      <td className="px-2 py-1 text-right font-mono">{fmtPct(item.margem_efetiva_pct)}</td>
+                      <td className="px-2 py-1 text-center">
+                        <button
+                          onClick={() => onRemoveItem(grupo.id, item.id)}
+                          className="text-red-300 hover:text-red-500"
+                        >
+                          ×
+                        </button>
+                      </td>
+                    </tr>
+                    {sugestaoItemId === item.id && (
+                      <tr>
+                        <td colSpan={colsTecnica + 1} className="px-2 py-1">
+                          <ListaSugestoesSemelhantes
+                            titulo="Composições parecidas"
+                            itens={sugestoesComposicoes}
+                            renderItem={c => <span>{c.nome}</span>}
+                            onSelecionar={c => {
+                              onConverterParaComposicao(grupo.id, item.id, c.id, item.quantidade)
+                              setSugestaoItemId(null)
+                            }}
+                            onDispensar={() => {
+                              setItensComSugestaoDispensada(prev => new Set(prev).add(item.id))
+                              setSugestaoItemId(null)
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
                 <tr>
                   <td colSpan={colsTecnica + 1} className="px-2 py-1 border-b border-border/50">

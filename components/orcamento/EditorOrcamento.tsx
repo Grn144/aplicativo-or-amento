@@ -194,6 +194,32 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
     ))
   }
 
+  async function converterItemParaComposicao(grupoId: string, itemId: string, composicaoId: string, quantidade: number) {
+    // Insere a nova composição primeiro, remove a manual depois: se a
+    // remoção falhar, sobra um item manual duplicado (recuperável — o
+    // usuário só precisa apagar manualmente), o que é bem melhor do que
+    // perder o item se a ordem fosse invertida e o insert falhasse depois
+    // do delete. Mesmo princípio de tolerância a escrita não-transacional
+    // já aceito em outros fluxos do projeto (ex.: criarComposicao).
+    const resInsercao = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ composicao_id: composicaoId, quantidade }),
+    })
+    if (!resInsercao.ok) {
+      alert('Não foi possível inserir a composição selecionada.')
+      return
+    }
+    const novoItem = await resInsercao.json()
+    await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, { method: 'DELETE' })
+    setGrupos(prev => prev.map(g =>
+      g.id !== grupoId ? g : {
+        ...g,
+        itens_orcamento: [...g.itens_orcamento.filter(it => it.id !== itemId), novoItem],
+      }
+    ))
+  }
+
   async function atualizarUnidade(grupoId: string, itemId: string, sigla: string) {
     const res = await fetch(`/api/obras/${obra.id}/grupos/${grupoId}/itens/${itemId}`, {
       method: 'PUT',
@@ -296,6 +322,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         onRemoveGrupo={removerGrupo}
         onAddItem={adicionarItem}
         onRemoveItem={removerItem}
+        onConverterParaComposicao={converterItemParaComposicao}
       />
 
       <InserirComposicaoModal

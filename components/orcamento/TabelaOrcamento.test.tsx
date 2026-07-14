@@ -63,6 +63,7 @@ function renderTabela(itens: ItemOrcamento[], props: Partial<React.ComponentProp
       onRemoveGrupo={vi.fn()}
       onAddItem={vi.fn()}
       onRemoveItem={vi.fn()}
+      onConverterParaComposicao={vi.fn().mockResolvedValue(undefined)}
       {...props}
     />
   )
