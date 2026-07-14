@@ -2,6 +2,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { calcularCustoDireto } from './calculos'
 import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from './normalizar'
+import { gerarEmbedding } from '@/lib/embeddings/gerar'
+import { textoEmbeddingComposicao, textoEmbeddingMaterial } from './embeddings-texto'
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>
 
@@ -97,6 +99,31 @@ export async function criarComposicao(
     usuario_id: usuarioId,
   })
   if (erroVersao) return { status: 500, body: { error: erroVersao.message } }
+
+  // Embeddings (B5b): melhor-esforço, nunca falha a criação da composição
+  // por causa disso — se a API de embeddings falhar, a composição fica sem
+  // embedding até o próximo backfill/edição, mas já foi salva com sucesso.
+  const embeddingComposicao = await gerarEmbedding(
+    textoEmbeddingComposicao(composicao.nome, composicao.descricao_tecnica)
+  )
+  if (embeddingComposicao) {
+    const { error: erroEmbedding } = await supabase
+      .from('composicoes')
+      .update({ embedding: embeddingComposicao })
+      .eq('id', composicao.id)
+    if (erroEmbedding) console.error('Falha ao gravar embedding da composição:', erroEmbedding.message)
+  }
+  await Promise.all(
+    (resMateriais.data ?? []).map(async m => {
+      const embeddingMaterial = await gerarEmbedding(textoEmbeddingMaterial(m.descricao))
+      if (!embeddingMaterial) return
+      const { error: erroEmbeddingMaterial } = await supabase
+        .from('composicao_materiais')
+        .update({ embedding: embeddingMaterial })
+        .eq('id', m.id)
+      if (erroEmbeddingMaterial) console.error('Falha ao gravar embedding do material:', erroEmbeddingMaterial.message)
+    })
+  )
 
   return {
     status: 201,
