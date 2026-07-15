@@ -16,6 +16,9 @@ export interface EstatisticaComposicao {
   mediaQuantidade: number
 }
 
+export const LIMIAR_DESVIO_PCT = 0.3
+export const AMOSTRAS_MINIMAS = 3
+
 function media(lista: ItemHistoricoParaEstatistica[], campo: keyof Omit<ItemHistoricoParaEstatistica, 'composicao_id'>): number {
   return lista.reduce((acc, item) => acc + item[campo], 0) / lista.length
 }
@@ -77,6 +80,15 @@ function adicionarAlerta(alertas: Record<string, Alerta[]>, itemId: string, aler
   alertas[itemId] = lista
 }
 
+function desviaMaisQue(valor: number, mediaHistorica: number, limiar: number): boolean {
+  if (mediaHistorica <= 0) return false
+  return Math.abs(valor - mediaHistorica) / mediaHistorica > limiar
+}
+
+function pctDesvio(valor: number, mediaHistorica: number): number {
+  return Math.round((Math.abs(valor - mediaHistorica) / mediaHistorica) * 100)
+}
+
 export function calcularAlertasOrcamento(
   itens: ItemParaAlerta[],
   estatisticas: Record<string, EstatisticaComposicao>
@@ -130,6 +142,48 @@ export function calcularAlertasOrcamento(
   for (const item of itens) {
     if (item.quantidade <= 0) {
       adicionarAlerta(alertas, item.id, { tipo: 'quantidade_inconsistente', mensagem: 'Quantidade zerada ou negativa' })
+    }
+
+    if (!item.composicao_id) {
+      // Pula checagens de histórico se não tem composição, mas continua para checar unidade divergente abaixo
+    } else {
+      const stats = estatisticas[item.composicao_id]
+      if (stats && stats.amostras >= AMOSTRAS_MINIMAS) {
+        if (item.custo_unit_material > 0 && desviaMaisQue(item.custo_unit_material, stats.mediaCustoMaterial, LIMIAR_DESVIO_PCT)) {
+          adicionarAlerta(alertas, item.id, {
+            tipo: 'valor_material_fora_padrao',
+            mensagem: `Custo de material ${pctDesvio(item.custo_unit_material, stats.mediaCustoMaterial)}% fora da média histórica`,
+          })
+        }
+        if (item.custo_unit_mao_obra > 0 && desviaMaisQue(item.custo_unit_mao_obra, stats.mediaCustoMaoObra, LIMIAR_DESVIO_PCT)) {
+          adicionarAlerta(alertas, item.id, {
+            tipo: 'valor_mao_obra_fora_padrao',
+            mensagem: `Custo de mão de obra ${pctDesvio(item.custo_unit_mao_obra, stats.mediaCustoMaoObra)}% fora da média histórica`,
+          })
+        }
+        if (item.markup_material > 0 && desviaMaisQue(item.markup_material, stats.mediaMarkupMaterial, LIMIAR_DESVIO_PCT)) {
+          adicionarAlerta(alertas, item.id, {
+            tipo: 'markup_material_fora_faixa',
+            mensagem: `Markup de material ${pctDesvio(item.markup_material, stats.mediaMarkupMaterial)}% fora da faixa histórica`,
+          })
+        }
+        if (item.markup_mao_obra > 0 && desviaMaisQue(item.markup_mao_obra, stats.mediaMarkupMaoObra, LIMIAR_DESVIO_PCT)) {
+          adicionarAlerta(alertas, item.id, {
+            tipo: 'markup_mao_obra_fora_faixa',
+            mensagem: `Markup de mão de obra ${pctDesvio(item.markup_mao_obra, stats.mediaMarkupMaoObra)}% fora da faixa histórica`,
+          })
+        }
+        if (item.quantidade > 0 && desviaMaisQue(item.quantidade, stats.mediaQuantidade, LIMIAR_DESVIO_PCT)) {
+          adicionarAlerta(alertas, item.id, {
+            tipo: 'quantidade_inconsistente',
+            mensagem: `Quantidade ${pctDesvio(item.quantidade, stats.mediaQuantidade)}% fora da média histórica`,
+          })
+        }
+      }
+    }
+
+    if (item.unidade_id && item.composicoes?.unidade_id && item.unidade_id !== item.composicoes.unidade_id) {
+      adicionarAlerta(alertas, item.id, { tipo: 'unidade_divergente', mensagem: 'Unidade diferente da unidade cadastrada na composição' })
     }
   }
 

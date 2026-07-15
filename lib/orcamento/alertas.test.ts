@@ -115,3 +115,107 @@ describe('calcularAlertasOrcamento — quantidade inconsistente (zero/negativa)'
     expect(resultado['item-1'] ?? []).toEqual([])
   })
 })
+
+describe('calcularAlertasOrcamento — valor/markup fora do padrão', () => {
+  const estatisticasBase = {
+    'comp-1': {
+      amostras: 3,
+      mediaCustoMaterial: 100,
+      mediaCustoMaoObra: 50,
+      mediaMarkupMaterial: 1.2,
+      mediaMarkupMaoObra: 1.3,
+      mediaQuantidade: 10,
+    },
+  }
+
+  it('sinaliza custo de material fora do padrão quando desvia mais de 30% da média', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 200, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1'].some(a => a.tipo === 'valor_material_fora_padrao')).toBe(true)
+  })
+
+  it('não sinaliza quando o desvio é menor que 30%', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 110, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1'] ?? []).toEqual([])
+  })
+
+  it('não sinaliza quando a composição tem menos de 3 amostras históricas', () => {
+    const estatisticasPoucaAmostra = { 'comp-1': { ...estatisticasBase['comp-1'], amostras: 2 } }
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 500, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasPoucaAmostra)
+    expect(resultado['item-1'] ?? []).toEqual([])
+  })
+
+  it('sinaliza markup de mão de obra fora da faixa', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 100, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 2.5, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1'].some(a => a.tipo === 'markup_mao_obra_fora_faixa')).toBe(true)
+  })
+
+  it('sinaliza quantidade fora do padrão histórico mesmo sendo positiva', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 50, custo_unit_material: 100, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1'].some(a => a.tipo === 'quantidade_inconsistente')).toBe(true)
+  })
+
+  it('ignora as checagens de histórico para item sem composicao_id', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: null, quantidade: 50, custo_unit_material: 9999, custo_unit_mao_obra: 9999, markup_material: 9999, markup_mao_obra: 9999, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1'] ?? []).toEqual([])
+  })
+
+  it('ignora a comparação de um campo quando o valor do item nesse campo é zero', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 0, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, estatisticasBase)
+    expect(resultado['item-1']?.some(a => a.tipo === 'valor_material_fora_padrao') ?? false).toBe(false)
+  })
+})
+
+describe('calcularAlertasOrcamento — unidade divergente', () => {
+  it('sinaliza quando a unidade do item difere da unidade da composição', () => {
+    const itens = [
+      {
+        id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10,
+        custo_unit_material: 100, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3,
+        unidade_id: 'un-un', composicoes: { unidade_id: 'un-m2' },
+      },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, {})
+    expect(resultado['item-1'].some(a => a.tipo === 'unidade_divergente')).toBe(true)
+  })
+
+  it('não sinaliza quando as unidades são iguais', () => {
+    const itens = [
+      {
+        id: 'item-1', descricao: 'Item A', composicao_id: 'comp-1', quantidade: 10,
+        custo_unit_material: 100, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3,
+        unidade_id: 'un-m2', composicoes: { unidade_id: 'un-m2' },
+      },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, {})
+    expect(resultado['item-1'] ?? []).toEqual([])
+  })
+
+  it('não sinaliza quando o item não tem composição vinculada', () => {
+    const itens = [
+      { id: 'item-1', descricao: 'Item A', composicao_id: null, quantidade: 10, custo_unit_material: 100, custo_unit_mao_obra: 50, markup_material: 1.2, markup_mao_obra: 1.3, unidade_id: 'un-un' },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, {})
+    expect(resultado['item-1'] ?? []).toEqual([])
+  })
+})
