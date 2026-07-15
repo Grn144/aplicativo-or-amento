@@ -99,20 +99,31 @@ export function calcularAlertasOrcamento(
     }
   }
 
+  const paresJaAlertados = new Map<string, Set<string>>()
+  function jaAlertouPar(itemId: string, outroId: string): boolean {
+    return paresJaAlertados.get(itemId)?.has(outroId) ?? false
+  }
+  function registrarPar(itemId: string, outroId: string) {
+    const set = paresJaAlertados.get(itemId) ?? new Set<string>()
+    set.add(outroId)
+    paresJaAlertados.set(itemId, set)
+  }
+
   for (const lista of porComposicao.values()) {
     if (lista.length < 2) continue
     for (const item of lista) {
       const outro = lista.find(i => i.id !== item.id)!
       adicionarAlerta(alertas, item.id, { tipo: 'duplicado', mensagem: `Mesma composição do item "${outro.descricao}"` })
+      registrarPar(item.id, outro.id)
     }
   }
   for (const lista of porDescricao.values()) {
     if (lista.length < 2) continue
     for (const item of lista) {
-      const jaSinalizadoPorComposicao = item.composicao_id != null && (porComposicao.get(item.composicao_id)?.length ?? 0) > 1
-      if (jaSinalizadoPorComposicao) continue
       const outro = lista.find(i => i.id !== item.id)!
+      if (jaAlertouPar(item.id, outro.id)) continue
       adicionarAlerta(alertas, item.id, { tipo: 'duplicado', mensagem: `Mesma descrição do item "${outro.descricao}"` })
+      registrarPar(item.id, outro.id)
     }
   }
 

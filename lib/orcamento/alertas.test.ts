@@ -73,6 +73,21 @@ describe('calcularAlertasOrcamento — duplicado', () => {
     const alertasDuplicado = resultado['item-1'].filter(a => a.tipo === 'duplicado')
     expect(alertasDuplicado).toHaveLength(1)
   })
+
+  it('sinaliza duas relações de duplicado distintas envolvendo o mesmo item, sem suprimir uma pela outra', () => {
+    const itens = [
+      { id: 'item-a', descricao: 'Pintura sala', composicao_id: 'comp-1', quantidade: 10, custo_unit_material: 50, custo_unit_mao_obra: 30, markup_material: 1.2, markup_mao_obra: 1.2, unidade_id: null },
+      { id: 'item-b', descricao: 'Pintura quarto', composicao_id: 'comp-1', quantidade: 5, custo_unit_material: 50, custo_unit_mao_obra: 30, markup_material: 1.2, markup_mao_obra: 1.2, unidade_id: null },
+      { id: 'item-c', descricao: 'Pintura sala', composicao_id: 'comp-2', quantidade: 8, custo_unit_material: 50, custo_unit_mao_obra: 30, markup_material: 1.2, markup_mao_obra: 1.2, unidade_id: null },
+    ]
+    const resultado = calcularAlertasOrcamento(itens, {})
+    // item-a é duplicado de item-b (mesma composição) E de item-c (mesma descrição) — duas relações distintas, ambas devem aparecer.
+    const alertasA = resultado['item-a'].filter(a => a.tipo === 'duplicado')
+    expect(alertasA).toHaveLength(2)
+    // item-c só é duplicado de item-a (descrição) — não tem relação de composição com ninguém (comp-2 é usado só por ele).
+    const alertasC = resultado['item-c'].filter(a => a.tipo === 'duplicado')
+    expect(alertasC).toHaveLength(1)
+  })
 })
 
 describe('calcularAlertasOrcamento — quantidade inconsistente (zero/negativa)', () => {
