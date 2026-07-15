@@ -3,9 +3,11 @@
 import { useRef, useState } from 'react'
 import { calcularGrupo, calcularRentabilidade, calcularTotaisGerais } from '@/lib/calculos'
 import { calcularAlertasOrcamento, type EstatisticaComposicao } from '@/lib/orcamento/alertas'
+import { validarOrcamentoParaExportacao, type ProblemaExportacao } from '@/lib/orcamento/validacao-exportacao'
 import type { Cliente, Disciplina, GrupoOrcamento, ItemOrcamento, UnidadeMedida } from '@/types/database'
 import type { GrupoCalculado, TotaisGerais } from '@/types/orcamento'
 import InserirComposicaoModal from '@/components/composicoes/InserirComposicaoModal'
+import ValidacaoExportacaoModal from './ValidacaoExportacaoModal'
 import CabecalhoObra from './CabecalhoObra'
 import TabelaOrcamento from './TabelaOrcamento'
 
@@ -42,6 +44,9 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades,
   const [exportando, setExportando] = useState<'tecnico' | 'comercial' | null>(null)
   const [importando, setImportando] = useState(false)
   const [modalComposicaoAberto, setModalComposicaoAberto] = useState(false)
+  const [modalValidacaoAberto, setModalValidacaoAberto] = useState(false)
+  const [problemasExportacao, setProblemasExportacao] = useState<ProblemaExportacao[]>([])
+  const [tipoExportacaoPendente, setTipoExportacaoPendente] = useState<'tecnico' | 'comercial' | null>(null)
   const [disciplinasList, setDisciplinasList] = useState(disciplinas)
   const [unidadesList, setUnidadesList] = useState(unidades)
   const [fatores, setFatores] = useState({
@@ -74,7 +79,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades,
     }
   }
 
-  async function exportar(tipo: 'tecnico' | 'comercial') {
+  async function executarExportacao(tipo: 'tecnico' | 'comercial') {
     setExportando(tipo)
     try {
       const res = await fetch(`/api/obras/${obra.id}/export?tipo=${tipo}`)
@@ -90,6 +95,26 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades,
     } finally {
       setExportando(null)
     }
+  }
+
+  function exportar(tipo: 'tecnico' | 'comercial') {
+    const itens = gruposCalculados.flatMap(g => g.itens_calculados)
+    const problemas = validarOrcamentoParaExportacao(itens)
+    if (problemas.length > 0) {
+      setProblemasExportacao(problemas)
+      setTipoExportacaoPendente(tipo)
+      setModalValidacaoAberto(true)
+      return
+    }
+    executarExportacao(tipo)
+  }
+
+  function confirmarExportacaoComProblemas() {
+    setModalValidacaoAberto(false)
+    if (tipoExportacaoPendente) {
+      executarExportacao(tipoExportacaoPendente)
+    }
+    setTipoExportacaoPendente(null)
   }
 
   async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -338,6 +363,13 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades,
         obraId={obra.id}
         grupos={grupos.map(g => ({ id: g.id, letra: g.letra, disciplinas: g.disciplinas }))}
         onInserido={itemInseridoPorComposicao}
+      />
+
+      <ValidacaoExportacaoModal
+        aberto={modalValidacaoAberto}
+        onOpenChange={setModalValidacaoAberto}
+        problemas={problemasExportacao}
+        onConfirmar={confirmarExportacaoComProblemas}
       />
     </div>
   )
