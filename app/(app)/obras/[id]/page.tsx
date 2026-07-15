@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import EditorOrcamento from '@/components/orcamento/EditorOrcamento'
+import { calcularEstatisticasHistoricas, type EstatisticaComposicao } from '@/lib/orcamento/alertas'
 
 type ObraCompleta = {
   id: string
@@ -38,7 +39,7 @@ type ObraCompleta = {
       ordem: number
       composicao_id: string | null
       composicao_versao: number | null
-      composicoes: { versao: number } | null
+      composicoes: { versao: number; unidade_id: string | null } | null
       unidades_medida: { id: string; sigla: string; descricao: string | null } | null
     }[]
   }[]
@@ -69,7 +70,7 @@ export default async function ObraPage({
             fee_mao_obra, fee_material,
             observacao, observacao_2, ordem,
             composicao_id, composicao_versao,
-            composicoes (versao),
+            composicoes (versao, unidade_id),
             unidades_medida (id, sigla, descricao)
           )
         )
@@ -95,12 +96,35 @@ export default async function ObraPage({
     g.itens_orcamento?.sort((a, b) => a.ordem - b.ordem)
   })
 
+  const composicaoIds = [...new Set(
+    (obra.grupos_orcamento ?? [])
+      .flatMap(g => g.itens_orcamento ?? [])
+      .map(i => i.composicao_id)
+      .filter((id): id is string => id != null)
+  )]
+
+  let estatisticasHistoricas: Record<string, EstatisticaComposicao> = {}
+  if (composicaoIds.length > 0) {
+    const { data: itensHistorico } = await supabase
+      .from('itens_orcamento')
+      .select('composicao_id, custo_unit_material, custo_unit_mao_obra, markup_material, markup_mao_obra, quantidade')
+      .in('composicao_id', composicaoIds)
+
+    if (itensHistorico) {
+      const itensValidos = itensHistorico.filter(
+        (i): i is typeof i & { composicao_id: string } => i.composicao_id != null
+      )
+      estatisticasHistoricas = calcularEstatisticasHistoricas(itensValidos)
+    }
+  }
+
   return (
     <EditorOrcamento
       obra={obra as unknown as Parameters<typeof EditorOrcamento>[0]['obra']}
       clientes={clientesResult.data ?? []}
       disciplinas={disciplinasResult.data ?? []}
       unidades={unidadesResult.data ?? []}
+      estatisticasHistoricas={estatisticasHistoricas}
     />
   )
 }
