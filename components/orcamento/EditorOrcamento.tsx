@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { calcularGrupo, calcularRentabilidade, calcularTotaisGerais } from '@/lib/calculos'
+import { calcularAlertasOrcamento, type EstatisticaComposicao } from '@/lib/orcamento/alertas'
 import type { Cliente, Disciplina, GrupoOrcamento, ItemOrcamento, UnidadeMedida } from '@/types/database'
 import type { GrupoCalculado, TotaisGerais } from '@/types/orcamento'
 import InserirComposicaoModal from '@/components/composicoes/InserirComposicaoModal'
@@ -31,9 +32,10 @@ interface Props {
   clientes: Pick<Cliente, 'id' | 'razao_social'>[]
   disciplinas: Pick<Disciplina, 'id' | 'nome'>[]
   unidades: Pick<UnidadeMedida, 'id' | 'sigla'>[]
+  estatisticasHistoricas: Record<string, EstatisticaComposicao>
 }
 
-export default function EditorOrcamento({ obra, clientes, disciplinas, unidades }: Props) {
+export default function EditorOrcamento({ obra, clientes, disciplinas, unidades, estatisticasHistoricas }: Props) {
   const [grupos, setGrupos] = useState<GrupoComItens[]>(
     obra.grupos_orcamento.map(g => ({ ...g, itens_orcamento: g.itens_orcamento ?? [] }))
   )
@@ -53,6 +55,10 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
   const gruposCalculados: GrupoCalculado[] = grupos.map(g => calcularGrupo(g, feeFator))
   const totais: TotaisGerais = calcularTotaisGerais(gruposCalculados)
   const rentabilidade = calcularRentabilidade(gruposCalculados, fatores)
+  const alertasPorItem = calcularAlertasOrcamento(
+    grupos.flatMap(g => g.itens_orcamento),
+    estatisticasHistoricas
+  )
 
   async function salvarFator(campo: 'fee_fator' | 'comissao_valor' | 'imposto_valor', valor: number) {
     const snapshot = fatores
@@ -316,6 +322,7 @@ export default function EditorOrcamento({ obra, clientes, disciplinas, unidades 
         obraId={obra.id}
         disciplinas={disciplinasList}
         unidades={unidadesList}
+        alertasPorItem={alertasPorItem}
         onUpdateItem={atualizarItem}
         onUpdateUnidade={atualizarUnidade}
         onAddDisciplina={adicionarDisciplina}
