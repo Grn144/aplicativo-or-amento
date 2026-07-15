@@ -76,7 +76,7 @@ export interface ItemOrcamento {
   ordem: number
   composicao_id: string | null
   composicao_versao: number | null
-  composicoes?: Pick<Composicao, 'versao'> | null
+  composicoes?: Pick<Composicao, 'versao' | 'unidade_id'> | null
   unidades_medida?: UnidadeMedida
 }
 
