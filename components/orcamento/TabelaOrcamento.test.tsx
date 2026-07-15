@@ -57,6 +57,7 @@ function renderTabela(itens: ItemOrcamento[], props: Partial<React.ComponentProp
       obraId="obra1"
       disciplinas={[{ id: 'd1', nome: 'Estrutura' }]}
       unidades={[{ id: 'un1', sigla: 'M2' }]}
+      alertasPorItem={{}}
       onUpdateItem={onUpdateItem}
       onUpdateUnidade={vi.fn()}
       onAddDisciplina={vi.fn()}

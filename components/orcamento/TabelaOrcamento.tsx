@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react'
 import { fmt, fmtPct } from '@/lib/format'
 import type { GrupoCalculado, TotaisGerais, TipoVisao } from '@/types/orcamento'
 import type { Disciplina, UnidadeMedida } from '@/types/database'
+import type { Alerta } from '@/lib/orcamento/alertas'
 import { ListaSugestoesSemelhantes } from '@/components/composicoes/ListaSugestoesSemelhantes'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   obraId: string
   disciplinas: Pick<Disciplina, 'id' | 'nome'>[]
   unidades: Pick<UnidadeMedida, 'id' | 'sigla'>[]
+  alertasPorItem: Record<string, Alerta[]>
   onUpdateItem: (grupoId: string, itemId: string, campo: string, valor: unknown) => Promise<void>
   onUpdateUnidade: (grupoId: string, itemId: string, sigla: string) => Promise<void>
   onAddDisciplina: (nome: string) => Promise<void>
@@ -110,12 +112,25 @@ function IndicadorDesatualizado({ item }: { item: Parameters<typeof itemDesatual
   )
 }
 
+function IndicadorAlertas({ alertas }: { alertas: Alerta[] | undefined }) {
+  if (!alertas || alertas.length === 0) return null
+  return (
+    <span
+      title={alertas.map(a => a.mensagem).join(' · ')}
+      className="shrink-0 text-red-500"
+    >
+      <AlertTriangle className="size-3.5" />
+    </span>
+  )
+}
+
 export default function TabelaOrcamento({
   gruposCalculados,
   totais,
   visao,
   disciplinas,
   unidades,
+  alertasPorItem,
   onUpdateItem,
   onUpdateUnidade,
   onAddDisciplina,
@@ -224,6 +239,7 @@ export default function TabelaOrcamento({
                               }}
                             />
                             <IndicadorDesatualizado item={item} />
+                            <IndicadorAlertas alertas={alertasPorItem[item.id]} />
                           </div>
                         </td>
                         <td className="px-2 py-1">
@@ -457,6 +473,7 @@ export default function TabelaOrcamento({
                             }}
                           />
                           <IndicadorDesatualizado item={item} />
+                          <IndicadorAlertas alertas={alertasPorItem[item.id]} />
                         </div>
                       </td>
                       <td className="px-2 py-1">
