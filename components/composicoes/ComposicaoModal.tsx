@@ -62,7 +62,7 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
     { id: string; codigo: string; nome: string; disciplina_nome: string | null }[]
   >([])
   const [semelhantesDispensado, setSemelhantesDispensado] = useState(false)
-  const [composicaoParaVisualizar, setComposicaoParaVisualizar] = useState<string | null>(null)
+  const [clonando, setClonando] = useState(false)
   const [linhaAtivaMaterial, setLinhaAtivaMaterial] = useState<number | null>(null)
   const [materiaisSemelhantes, setMateriaisSemelhantes] = useState<
     Record<number, { descricao: string; fornecedor: string | null; preco_unitario: number }[]>
@@ -121,6 +121,41 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
     setUsos(Array.isArray(listaUsos) ? listaUsos : [])
     setCarregando(false)
   }, [composicaoId])
+
+  async function usarComoModelo(id: string) {
+    if (clonando) return
+    setClonando(true)
+    const res = await fetch(`/api/composicoes/${id}`)
+    setClonando(false)
+    if (!res.ok) {
+      setErro('Não foi possível carregar a composição selecionada.')
+      return
+    }
+    const composicao: ComposicaoCompleta = await res.json()
+    setForm(prev => ({
+      ...prev,
+      disciplina_id: composicao.disciplina_id ?? '',
+      unidade_id: composicao.unidade_id ?? '',
+      produtividade: composicao.produtividade ?? '',
+      markup_sugerido: String(composicao.markup_sugerido),
+    }))
+    setMateriais(
+      composicao.composicao_materiais.map(m => ({
+        descricao: m.descricao,
+        quantidade: String(m.quantidade),
+        unidade_id: m.unidade_id ?? '',
+        fornecedor: m.fornecedor ?? '',
+        preco_unitario: String(m.preco_unitario),
+      }))
+    )
+    setMaoDeObra(
+      composicao.composicao_mao_obra.map(m => ({
+        cargo: m.cargo, horas: String(m.horas), custo_hora: String(m.custo_hora),
+      }))
+    )
+    setSemelhantesDispensado(true)
+    setComposicoesSemelhantes([])
+  }
 
   async function restaurarVersao(versaoId: string) {
     if (!composicaoId) return
@@ -263,8 +298,7 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
   }
 
   return (
-    <>
-      <Dialog open={aberto} onOpenChange={onOpenChange}>
+    <Dialog open={aberto} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] w-full max-w-2xl overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{composicaoId ? 'Editar composição' : 'Nova composição'}</DialogTitle>
@@ -321,7 +355,7 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
                     {c.disciplina_nome ? ` — ${c.disciplina_nome}` : ''}
                   </span>
                 )}
-                onSelecionar={c => setComposicaoParaVisualizar(c.id)}
+                onSelecionar={c => usarComoModelo(c.id)}
                 onDispensar={() => {
                   setSemelhantesDispensado(true)
                   setComposicoesSemelhantes([])
@@ -515,18 +549,6 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
           </Button>
         </DialogFooter>
       </DialogContent>
-      </Dialog>
-
-      {composicaoParaVisualizar !== null && (
-        <ComposicaoModal
-          aberto={true}
-          onOpenChange={aberto => { if (!aberto) setComposicaoParaVisualizar(null) }}
-          composicaoId={composicaoParaVisualizar}
-          disciplinas={disciplinas}
-          unidades={unidades}
-          onSalvo={onSalvo}
-        />
-      )}
-    </>
+    </Dialog>
   )
 }
