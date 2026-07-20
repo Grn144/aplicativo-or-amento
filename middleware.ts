@@ -75,6 +75,18 @@ export async function middleware(request: NextRequest) {
   // Janela deslizante: renova o TTL do cookie de MFA a cada atividade de página.
   // Sem atividade por MFA_TTL_SEGUNDOS, o cookie expira e o próximo acesso cai no login.
   if (user && mfaVerificado) {
+    // Usuário desativado por um admin: sessão Supabase e MFA continuam válidos,
+    // mas o acesso é bloqueado na próxima requisição autenticada.
+    const { data: usuarioDb } = await supabase
+      .from('usuarios').select('ativo').eq('id', user.id).single()
+    if (usuarioDb && !usuarioDb.ativo) {
+      await supabase.auth.signOut()
+      const res = NextResponse.redirect(new URL('/login', request.url))
+      res.cookies.delete('mfa_em_andamento')
+      res.cookies.delete('mfa_verificado')
+      return res
+    }
+
     supabaseResponse.cookies.set('mfa_verificado', 'true', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
