@@ -10,7 +10,7 @@ export default defineConfig({
     globals: true,
     // Ignora worktrees aninhados (ex.: .claude/worktrees de sessões paralelas),
     // node_modules e build — senão o vitest roda cópias duplicadas dos testes.
-    exclude: ['**/node_modules/**', '**/.next/**', '**/.claude/**', '**/dist/**'],
+    exclude: ['**/node_modules/**', '**/.next/**', '**/.claude/**', '**/.worktrees/**', '**/dist/**'],
   },
   resolve: {
     alias: {
