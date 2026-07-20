@@ -14,6 +14,9 @@ export interface Usuario {
   nome: string
   email: string
   papel: Papel
+  cargo: string | null
+  departamento: string | null
+  telefone: string | null
   ativo: boolean
   criado_em: string
 }
