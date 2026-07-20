@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function GET(
   _request: NextRequest,
@@ -54,6 +55,11 @@ export async function PUT(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_obras')) {
+    return NextResponse.json({ error: 'Sem permissão para editar orçamentos' }, { status: 403 })
+  }
+
   const { id } = await params
   const body = await lerJson(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
@@ -90,12 +96,9 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
-  // Só administradores excluem orçamentos (o RLS também bloqueia, mas silenciosamente;
-  // a checagem explícita devolve um 403 claro em vez de um "sucesso" que não apaga nada).
-  const { data: usuario } = await supabase
-    .from('usuarios').select('papel').eq('id', user.id).single()
-  if (usuario?.papel !== 'admin') {
-    return NextResponse.json({ error: 'Apenas administradores podem excluir orçamentos' }, { status: 403 })
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'excluir_obras')) {
+    return NextResponse.json({ error: 'Sem permissão para excluir orçamentos' }, { status: 403 })
   }
 
   const { id } = await params

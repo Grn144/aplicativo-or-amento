@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function PUT(
   request: NextRequest,
@@ -9,6 +10,11 @@ export async function PUT(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_obras')) {
+    return NextResponse.json({ error: 'Sem permissão para editar orçamentos' }, { status: 403 })
+  }
 
   const { itemId } = await params
   const body = await lerJson(request)
@@ -70,6 +76,11 @@ export async function DELETE(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_obras')) {
+    return NextResponse.json({ error: 'Sem permissão para editar orçamentos' }, { status: 403 })
+  }
 
   const { itemId } = await params
 
