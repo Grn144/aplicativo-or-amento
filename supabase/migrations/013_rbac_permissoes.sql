@@ -2,17 +2,20 @@
 -- Fase 1 do módulo de Usuários: RBAC estendido (6 perfis) + permissões
 -- individuais por usuário (overrides sobre o perfil).
 -- Ver docs/superpowers/specs/2026-07-20-rbac-permissoes-design.md
+--
+-- Idempotente: seguro rodar mais de uma vez (usa IF NOT EXISTS / DROP ... IF
+-- EXISTS). Se uma execução anterior parou no meio, rodar de novo completa o resto.
 
 -- 1. Migrar dados existentes ANTES de trocar a constraint (sem perda)
 UPDATE usuarios SET papel = 'gerente'   WHERE papel = 'engenheiro';
 UPDATE usuarios SET papel = 'visitante' WHERE papel = 'visualizador';
 
-ALTER TABLE usuarios DROP CONSTRAINT usuarios_papel_check;
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_papel_check;
 ALTER TABLE usuarios ADD CONSTRAINT usuarios_papel_check
   CHECK (papel IN ('admin','gerente','orcamentista','comercial','financeiro','visitante'));
 
 -- 2. Overrides individuais de permissão (exceção pontual sobre o perfil)
-CREATE TABLE usuario_permissoes (
+CREATE TABLE IF NOT EXISTS usuario_permissoes (
   id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   usuario_id   uuid NOT NULL REFERENCES usuarios ON DELETE CASCADE,
   permissao    text NOT NULL,
@@ -21,13 +24,15 @@ CREATE TABLE usuario_permissoes (
   criado_em    timestamptz NOT NULL DEFAULT now(),
   UNIQUE (usuario_id, permissao)
 );
-CREATE INDEX ON usuario_permissoes (usuario_id);
+CREATE INDEX IF NOT EXISTS usuario_permissoes_usuario_id_idx ON usuario_permissoes (usuario_id);
 
 ALTER TABLE usuario_permissoes ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "usuario_permissoes_select" ON usuario_permissoes;
 CREATE POLICY "usuario_permissoes_select" ON usuario_permissoes
   FOR SELECT TO authenticated
   USING (usuario_id = auth.uid() OR get_user_papel() = 'admin');
+DROP POLICY IF EXISTS "usuario_permissoes_write" ON usuario_permissoes;
 CREATE POLICY "usuario_permissoes_write" ON usuario_permissoes
   FOR ALL TO authenticated
   USING (get_user_papel() = 'admin')
@@ -113,13 +118,16 @@ ALTER POLICY "obras_delete" ON obras
 
 -- clientes_write cobria INSERT/UPDATE/DELETE junto — separa exclusão pra
 -- poder gatear por excluir_clientes (perfil isolado, distinto de editar_clientes)
-DROP POLICY "clientes_write" ON clientes;
+DROP POLICY IF EXISTS "clientes_write" ON clientes;
+DROP POLICY IF EXISTS "clientes_insert" ON clientes;
 CREATE POLICY "clientes_insert" ON clientes
   FOR INSERT TO authenticated
   WITH CHECK (get_user_papel() IN ('admin','gerente','orcamentista'));
+DROP POLICY IF EXISTS "clientes_update" ON clientes;
 CREATE POLICY "clientes_update" ON clientes
   FOR UPDATE TO authenticated
   USING (get_user_papel() IN ('admin','gerente','orcamentista'));
+DROP POLICY IF EXISTS "clientes_delete" ON clientes;
 CREATE POLICY "clientes_delete" ON clientes
   FOR DELETE TO authenticated
   USING (has_permissao('excluir_clientes'));
@@ -128,24 +136,27 @@ CREATE POLICY "clientes_delete" ON clientes
 -- restringe cadastrar/editar_composicoes a admin+gerente (orçamentista passa
 -- a só consultar o banco, não editá-lo — mudança de comportamento intencional,
 -- ver docs/superpowers/specs/2026-07-20-rbac-permissoes-design.md)
-DROP POLICY "composicoes_write" ON composicoes;
+DROP POLICY IF EXISTS "composicoes_write" ON composicoes;
+DROP POLICY IF EXISTS "composicoes_insert" ON composicoes;
 CREATE POLICY "composicoes_insert" ON composicoes
   FOR INSERT TO authenticated
   WITH CHECK (get_user_papel() IN ('admin','gerente'));
+DROP POLICY IF EXISTS "composicoes_update" ON composicoes;
 CREATE POLICY "composicoes_update" ON composicoes
   FOR UPDATE TO authenticated
   USING (get_user_papel() IN ('admin','gerente'));
+DROP POLICY IF EXISTS "composicoes_delete" ON composicoes;
 CREATE POLICY "composicoes_delete" ON composicoes
   FOR DELETE TO authenticated
   USING (has_permissao('excluir_composicoes'));
 
-DROP POLICY "composicao_materiais_write" ON composicao_materiais;
+DROP POLICY IF EXISTS "composicao_materiais_write" ON composicao_materiais;
 CREATE POLICY "composicao_materiais_write" ON composicao_materiais
   FOR ALL TO authenticated
   USING (get_user_papel() IN ('admin','gerente'))
   WITH CHECK (get_user_papel() IN ('admin','gerente'));
 
-DROP POLICY "composicao_mao_obra_write" ON composicao_mao_obra;
+DROP POLICY IF EXISTS "composicao_mao_obra_write" ON composicao_mao_obra;
 CREATE POLICY "composicao_mao_obra_write" ON composicao_mao_obra
   FOR ALL TO authenticated
   USING (get_user_papel() IN ('admin','gerente'))
