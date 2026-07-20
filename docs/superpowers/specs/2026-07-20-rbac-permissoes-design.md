@@ -131,4 +131,5 @@ Um usuário pode receber permissões além (ou aquém) do seu perfil, sem mudar 
 
 - `lib/permissoes/resolver.test.ts` — cobertura completa da matriz (cada perfil × cada permissão) e casos de override (concede permissão que o perfil não tem; revoga permissão que o perfil tem).
 - `lib/permissoes/mascarar.test.ts` — campos removidos/mantidos conforme permissão, incluindo caso aninhado (item dentro de grupo dentro de obra).
-- Testes de rota (mesmo padrão dos `*.test.ts` já existentes no projeto) para as rotas alteradas: 403 quando falta permissão, dados mascarados quando falta visualização.
+- `lib/permissoes/servidor.test.ts` — `obterUsuarioComPermissoes`, `requireRole`, `requirePermission` com Supabase mockado (mesmo padrão de mock usado em `lib/rate-limit.test.ts`).
+- O projeto hoje não tem nenhum teste de rota de API (nenhum `*.test.ts` dentro de `app/api`) — só testes de `lib/*`. Esta fase segue essa mesma convenção: a lógica de decisão (matriz, resolução de overrides, máscara) é 100% coberta em `lib/permissoes/*.test.ts`; as rotas só chamam essas funções já testadas e retornam 403, sem teste dedicado próprio, como todas as rotas atuais.
