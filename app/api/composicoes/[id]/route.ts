@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { normalizarMateriais, normalizarMaoObra, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 import { carregarComposicaoCompleta, atualizarComposicaoSeMudou } from '@/lib/composicoes/atualizar'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 type ComposicaoBody = {
   codigo?: string
@@ -27,6 +28,11 @@ export async function GET(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_banco_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para acessar o banco de composições' }, { status: 403 })
+  }
 
   const { id } = await params
   const { composicaoRes, materiaisRes, maoObraRes } = await carregarComposicaoCompleta(supabase, id)
@@ -75,6 +81,11 @@ export async function PUT(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para editar composições' }, { status: 403 })
+  }
+
   const { id } = await params
   const body = await lerJson<ComposicaoBody>(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
@@ -117,6 +128,11 @@ export async function DELETE(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'excluir_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para excluir composições' }, { status: 403 })
+  }
 
   const { id } = await params
   const { error } = await supabase.from('composicoes').delete().eq('id', id)

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { normalizarMateriais, normalizarMaoObra, extrairCamposDeSnapshot, type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 import { atualizarComposicaoSeMudou } from '@/lib/composicoes/atualizar'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 interface SnapshotArquivado {
   composicao: {
@@ -28,6 +29,11 @@ export async function POST(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para restaurar versões de composições' }, { status: 403 })
+  }
 
   const { id, versaoId } = await params
 

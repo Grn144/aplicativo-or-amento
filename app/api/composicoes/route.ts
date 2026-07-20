@@ -5,6 +5,7 @@ import { lerJson } from '@/lib/http'
 import { composicaoIncompleta } from '@/lib/composicoes/calculos'
 import { type MaterialBody, type MaoObraBody } from '@/lib/composicoes/normalizar'
 import { criarComposicao } from '@/lib/composicoes/criar'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 type ComposicaoBody = {
   codigo?: string
@@ -24,6 +25,11 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_banco_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para acessar o banco de composições' }, { status: 403 })
+  }
 
   const { searchParams } = new URL(request.url)
   const busca = searchParams.get('busca') ?? ''
@@ -113,6 +119,11 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'cadastrar_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para cadastrar composições' }, { status: 403 })
+  }
 
   const body = await lerJson<ComposicaoBody>(request)
   if (!body) return NextResponse.json({ error: 'Requisição inválida' }, { status: 400 })
