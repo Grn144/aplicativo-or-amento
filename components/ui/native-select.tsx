@@ -11,6 +11,9 @@ export function NativeSelect({ className, ...props }: React.ComponentProps<'sele
         'h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none transition-colors',
         'focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
         'disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30',
+        // Garante que as opções do dropdown nativo fiquem legíveis no tema escuro
+        // (o popup do <select> pode ignorar o color-scheme quando há fundo customizado)
+        '[&>option]:bg-popover [&>option]:text-popover-foreground',
         className
       )}
       {...props}

@@ -510,7 +510,7 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
                           type="button"
                           onClick={() => restaurarVersao(v.id)}
                           disabled={restaurando !== null}
-                          className="shrink-0 text-blue-600 hover:underline disabled:opacity-50"
+                          className="shrink-0 text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
                         >
                           {restaurando === v.id ? 'Restaurando...' : 'Restaurar esta versão'}
                         </button>
@@ -538,7 +538,7 @@ export default function ComposicaoModal({ aberto, onOpenChange, composicaoId, di
               </div>
             )}
 
-            {erro && <p className="text-sm text-red-600">{erro}</p>}
+            {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
           </div>
         )}
 

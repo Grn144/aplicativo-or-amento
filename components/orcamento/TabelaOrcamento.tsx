@@ -216,7 +216,7 @@ export default function TabelaOrcamento({
                     <td className="px-2 py-1.5 border-b border-border text-center">
                       <button
                         onClick={() => onRemoveGrupo(grupo.id)}
-                        className="text-red-400 hover:text-red-600 font-bold"
+                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold"
                         title="Remover disciplina"
                       >
                         ×
@@ -285,7 +285,7 @@ export default function TabelaOrcamento({
                         <td className="px-2 py-1 text-center">
                           <button
                             onClick={() => onRemoveItem(grupo.id, item.id)}
-                            className="text-red-300 hover:text-red-500"
+                            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             title="Remover item"
                           >
                             ×
@@ -328,7 +328,7 @@ export default function TabelaOrcamento({
                 </Fragment>
               ))}
             </tbody>
-            <tfoot className="bg-muted text-white font-semibold">
+            <tfoot className="bg-muted text-foreground font-semibold">
               <tr>
                 <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
                 <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_mao_obra_venda)}</td>
@@ -451,7 +451,7 @@ export default function TabelaOrcamento({
                   <td className="px-2 py-1.5 border-b border-border text-center">
                     <button
                       onClick={() => onRemoveGrupo(grupo.id)}
-                      className="text-red-400 hover:text-red-600 font-bold"
+                      className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold"
                     >
                       ×
                     </button>
@@ -576,7 +576,7 @@ export default function TabelaOrcamento({
                       <td className="px-2 py-1 text-center">
                         <button
                           onClick={() => onRemoveItem(grupo.id, item.id)}
-                          className="text-red-300 hover:text-red-500"
+                          className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         >
                           ×
                         </button>
@@ -618,7 +618,7 @@ export default function TabelaOrcamento({
               </Fragment>
             ))}
           </tbody>
-          <tfoot className="bg-muted text-white font-semibold">
+          <tfoot className="bg-muted text-foreground font-semibold">
             <tr>
               <td colSpan={8} className="px-2 py-2 text-right uppercase text-xs tracking-wide">Total Geral</td>
               <td className="px-2 py-2 text-right font-mono">{fmt(totais.total_custo)}</td>

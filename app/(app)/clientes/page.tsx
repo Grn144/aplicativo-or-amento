@@ -210,7 +210,7 @@ export default function ClientesPage() {
                 placeholder="Ex: Alameda Santos, 2153"
               />
             </div>
-            {erro && <p className="text-sm text-red-600">{erro}</p>}
+            {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setModalAberto(false)}>Cancelar</Button>

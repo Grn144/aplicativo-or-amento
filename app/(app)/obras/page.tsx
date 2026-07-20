@@ -345,7 +345,7 @@ export default function ObrasPage() {
                 onChange={e => setNovaObra(prev => ({ ...prev, data_orcamento: e.target.value }))}
               />
             </div>
-            {erro && <p className="text-sm text-red-600">{erro}</p>}
+            {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setModalAberto(false)}>Cancelar</Button>

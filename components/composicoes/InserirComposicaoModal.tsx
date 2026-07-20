@@ -157,7 +157,7 @@ export default function InserirComposicaoModal({ aberto, onOpenChange, obraId, g
             </div>
           )}
 
-          {erro && <p className="text-sm text-red-600">{erro}</p>}
+          {erro && <p className="text-sm text-red-600 dark:text-red-400">{erro}</p>}
         </div>
 
         <DialogFooter>
