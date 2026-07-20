@@ -88,7 +88,10 @@ export async function PUT(
     .select(CAMPOS_USUARIO)
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    if (error.code === 'PGRST116') return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
   if (!data) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
   return NextResponse.json(data)
 }
