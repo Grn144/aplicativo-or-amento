@@ -36,9 +36,13 @@ function NovaSenhaForm() {
     // Fallback: links antigos do Supabase traziam ?code=xxx (PKCE).
     const tokenHash = searchParams.get('token_hash')
     const code = searchParams.get('code')
+    // ?tipo=invite vem do email de convite de um usuário novo (Fase 2 do
+    // módulo de Usuários); ausente ou qualquer outro valor cai em 'recovery',
+    // o fluxo original de "esqueci minha senha".
+    const tipo = searchParams.get('tipo') === 'invite' ? 'invite' : 'recovery'
 
     if (tokenHash) {
-      supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash }).then(({ error }) => {
+      supabase.auth.verifyOtp({ type: tipo, token_hash: tokenHash }).then(({ error }) => {
         if (error) {
           setErro('Link inválido ou expirado. Solicite um novo link de recuperação.')
         } else {
