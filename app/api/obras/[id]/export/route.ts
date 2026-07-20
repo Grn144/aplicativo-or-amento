@@ -4,6 +4,7 @@ import { montarPlanilhaDescritivo, type GrupoComItens } from '@/lib/excel/export
 import { montarPlanilhaComercial, type GrupoComItensComercial } from '@/lib/excel/export-comercial'
 import { calcularItem } from '@/lib/calculos'
 import type { ItemOrcamento } from '@/types/database'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +17,14 @@ export async function GET(
   const { id } = await params
   // tipo=comercial → 14 colunas (preços de venda ao cliente); tipo=tecnico → 28 colunas (descritivo custo/FEE/venda/rentabilidade)
   const tipo = request.nextUrl.searchParams.get('tipo') === 'tecnico' ? 'tecnico' : 'comercial'
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'exportar_planilhas')) {
+    return NextResponse.json({ error: 'Sem permissão para exportar orçamentos' }, { status: 403 })
+  }
+  if (tipo === 'tecnico' && !requirePermission(usuario.permissoes, 'visualizar_custos')) {
+    return NextResponse.json({ error: 'Sem permissão para exportar a planilha técnica (com custos)' }, { status: 403 })
+  }
 
   const { data: obra, error } = await supabase
     .from('obras')

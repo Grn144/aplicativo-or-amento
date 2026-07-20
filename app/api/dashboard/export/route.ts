@@ -3,11 +3,17 @@ import ExcelJS from 'exceljs'
 import { createClient } from '@/lib/supabase/server'
 import { intervaloDoPeriodo, parsePeriodo, PERIODO_LABELS } from '@/lib/dashboard/periodo'
 import { calcularDashboard, STATUS_LABELS, type ObraDashboard } from '@/lib/dashboard/metricas'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_indicadores')) {
+    return NextResponse.json({ error: 'Sem permissão para exportar indicadores' }, { status: 403 })
+  }
 
   const periodo = parsePeriodo(request.nextUrl.searchParams.get('periodo') ?? undefined)
   const intervalo = intervaloDoPeriodo(periodo)

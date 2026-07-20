@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
+import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -35,7 +36,11 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+
+  return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes))
 }
 
 export async function POST(request: NextRequest) {
