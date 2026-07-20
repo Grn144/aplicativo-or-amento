@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import { parsePlanilhaObra, resolverCelula, type Celula } from '@/lib/excel/parse-obra'
 import { inserirConteudoObra } from '@/lib/excel/importar-obra'
 import ExcelJS from 'exceljs'
@@ -14,6 +15,11 @@ export async function POST(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'importar_planilhas')) {
+    return NextResponse.json({ error: 'Sem permissão para importar planilhas' }, { status: 403 })
+  }
 
   const { id: obra_id } = await params
 

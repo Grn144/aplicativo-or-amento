@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import { montarPlanilhaComposicoes, type ComposicaoParaExportar } from '@/lib/excel/export-composicoes'
 
 // Mesma lógica de filtros de GET /api/composicoes (busca/disciplina_id/tag/
@@ -9,6 +10,11 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'exportar_planilhas')) {
+    return NextResponse.json({ error: 'Sem permissão para exportar planilhas' }, { status: 403 })
+  }
 
   const { searchParams } = new URL(request.url)
   const busca = searchParams.get('busca') ?? ''
