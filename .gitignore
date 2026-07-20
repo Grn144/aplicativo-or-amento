@@ -45,3 +45,6 @@ next-env.d.ts
 
 # saida do graphify (analise de codebase, gerada localmente)
 /graphify-out/
+
+# worktrees locais (isolamento de sessão de desenvolvimento)
+/.worktrees/
