@@ -1,6 +1,7 @@
 // app/api/composicoes/materiais-semelhantes/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import { gerarEmbedding } from '@/lib/embeddings/gerar'
 import { filtrarPorSimilaridade, LIMIAR_SIMILARIDADE } from '@/lib/composicoes/embeddings-texto'
 
@@ -11,6 +12,11 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_banco_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para acessar o banco de composições' }, { status: 403 })
+  }
 
   const texto = request.nextUrl.searchParams.get('texto')?.trim() ?? ''
   if (!texto) return NextResponse.json([])

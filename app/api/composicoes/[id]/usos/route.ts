@@ -1,6 +1,7 @@
 // app/api/composicoes/[id]/usos/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function GET(
   _request: NextRequest,
@@ -9,6 +10,11 @@ export async function GET(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_banco_composicoes')) {
+    return NextResponse.json({ error: 'Sem permissão para acessar o banco de composições' }, { status: 403 })
+  }
 
   const { id } = await params
   const { data, error } = await supabase
