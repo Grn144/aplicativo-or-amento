@@ -94,6 +94,7 @@ Um usuário pode receber permissões além (ou aquém) do seu perfil, sem mudar 
 
 - Qualquer UI nova (tela de usuários, item de menu "Usuários", abas de cadastro/permissões/auditoria) — Fase 2.
 - Auditoria, histórico de login, indicadores de dashboard admin — Fase 3.
+- **Débito conhecido**: `app/(app)/dashboard/page.tsx` (página já existente, sem nenhuma mudança nesta fase) continua mostrando custo/margem/lucro pra qualquer papel, sem passar por `mascararCamposFinanceiros` — hoje só a rota `GET /api/dashboard/export` (Task 9) está protegida por `visualizar_indicadores`. Isso contradiz a matriz (Comercial/Visitante não deveriam ver esses KPIs), mas corrigir exigiria mudar UI, o que está fora do escopo combinado pra Fase 1 ("sem UI nova nesta fase"). A Fase 3 ("indicadores de dashboard admin") é o lugar certo pra fechar essa lacuna, aplicando `mascararCamposFinanceiros`/gating de indicadores também na página, não só na exportação.
 - Sessões ativas, bloqueio de conta após tentativas inválidas, encerrar sessão remotamente — Fase 4.
 - Autenticação em dois fatores estruturada (TOTP) — o MFA por e-mail já existente não muda.
 - Reimplementar hashing de senha, JWT, refresh token ou sessão — continua 100% Supabase Auth.
