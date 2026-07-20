@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { SessaoKeepAlive } from '@/components/layout/SessaoKeepAlive'
-import type { Papel } from '@/types/database'
+import { obterUsuarioComPermissoes } from '@/lib/permissoes/servidor'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -10,11 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
-  const { data: usuario } = await supabase
-    .from('usuarios')
-    .select('nome, papel')
-    .eq('id', user.id)
-    .single()
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -22,8 +18,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar
         usuario={{
           nome: usuario?.nome ?? 'Usuário',
-          papel: (usuario?.papel ?? 'visitante') as Papel,
+          papel: usuario?.papel ?? 'visitante',
         }}
+        permissoes={usuario?.permissoes ?? new Set()}
       />
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>
     </div>

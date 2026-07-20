@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import {
-  Boxes, Building2, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, Users, X,
+  Boxes, Building2, LayoutDashboard, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Sun, UserCog, Users, X,
 } from 'lucide-react'
 import { MARCA } from '@/components/auth/marca'
 import type { Papel } from '@/types/database'
+import type { Permissao } from '@/lib/permissoes/matriz'
 
-const PAPEL_LABELS: Record<Papel, string> = {
+export const PAPEL_LABELS: Record<Papel, string> = {
   admin: 'Administrador',
   gerente: 'Gerente',
   orcamentista: 'Orçamentista',
@@ -26,7 +27,9 @@ const ITENS = [
   { href: '/clientes', label: 'Clientes', Icone: Users },
 ]
 
-export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }) {
+export function Sidebar({
+  usuario, permissoes,
+}: { usuario: { nome: string; papel: Papel }; permissoes: ReadonlySet<Permissao> }) {
   const pathname = usePathname()
   const { resolvedTheme, setTheme } = useTheme()
   const [colapsada, setColapsada] = useState(false)
@@ -53,6 +56,10 @@ export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }
     .map(p => p[0]?.toUpperCase())
     .join('')
 
+  const itens = permissoes.has('editar_usuarios')
+    ? [...ITENS, { href: '/usuarios', label: 'Usuários', Icone: UserCog }]
+    : ITENS
+
   const conteudo = (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       {/* Logo */}
@@ -70,7 +77,7 @@ export function Sidebar({ usuario }: { usuario: { nome: string; papel: Papel } }
 
       {/* Menu */}
       <nav className="flex-1 space-y-1 p-2">
-        {ITENS.map(({ href, label, Icone }) => {
+        {itens.map(({ href, label, Icone }) => {
           const ativo = pathname.startsWith(href)
           return (
             <Link
