@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 
 export async function PUT(
   request: NextRequest,
@@ -9,6 +10,11 @@ export async function PUT(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'editar_clientes')) {
+    return NextResponse.json({ error: 'Sem permissão para editar clientes' }, { status: 403 })
+  }
 
   const { id } = await params
   const body = await lerJson<{ razao_social?: string; cnpj?: string; endereco?: string }>(request)
@@ -41,6 +47,11 @@ export async function DELETE(
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'excluir_clientes')) {
+    return NextResponse.json({ error: 'Sem permissão para excluir clientes' }, { status: 403 })
+  }
 
   const { id } = await params
 
