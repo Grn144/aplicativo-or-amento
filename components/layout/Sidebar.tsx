@@ -12,9 +12,11 @@ import type { Papel } from '@/types/database'
 
 const PAPEL_LABELS: Record<Papel, string> = {
   admin: 'Administrador',
-  engenheiro: 'Engenheiro',
+  gerente: 'Gerente',
   orcamentista: 'Orçamentista',
-  visualizador: 'Visualizador',
+  comercial: 'Comercial',
+  financeiro: 'Financeiro',
+  visitante: 'Visitante',
 }
 
 const ITENS = [

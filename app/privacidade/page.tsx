@@ -47,7 +47,7 @@ export default function PrivacidadePage() {
         <Secao titulo="2. Quais dados tratamos">
           <p>
             <strong className="text-foreground">Dados de usuários do sistema:</strong> nome,
-            e-mail corporativo, papel de acesso (ex.: administrador, engenheiro) e registros de
+            e-mail corporativo, papel de acesso (ex.: administrador, gerente) e registros de
             atividade (quem alterou o quê e quando nos orçamentos). São necessários para
             autenticação, controle de acesso e rastreabilidade das alterações.
           </p>

@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar
         usuario={{
           nome: usuario?.nome ?? 'Usuário',
-          papel: (usuario?.papel ?? 'visualizador') as Papel,
+          papel: (usuario?.papel ?? 'visitante') as Papel,
         }}
       />
       <main className="min-w-0 flex-1 overflow-auto">{children}</main>

@@ -1,4 +1,4 @@
-export type Papel = 'admin' | 'engenheiro' | 'orcamentista' | 'visualizador'
+export type Papel = 'admin' | 'gerente' | 'orcamentista' | 'comercial' | 'financeiro' | 'visitante'
 export type StatusObra = 'rascunho' | 'enviado' | 'aprovado' | 'em_execucao' | 'concluido' | 'cancelado'
 
 export interface Cliente {
