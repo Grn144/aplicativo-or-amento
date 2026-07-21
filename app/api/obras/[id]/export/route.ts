@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { montarPlanilhaDescritivo, type GrupoComItens } from '@/lib/excel/export-template'
 import { montarPlanilhaComercial, type GrupoComItensComercial } from '@/lib/excel/export-comercial'
 import { calcularItem } from '@/lib/calculos'
@@ -26,7 +26,9 @@ export async function GET(
     return NextResponse.json({ error: 'Sem permissão para exportar a planilha técnica (com custos)' }, { status: 403 })
   }
 
-  const { data: obra, error } = await supabase
+  const admin = await createAdminClient()
+
+  const { data: obra, error } = await admin
     .from('obras')
     .select(`
       codigo, nome, fee_fator, comissao_valor, imposto_valor,
