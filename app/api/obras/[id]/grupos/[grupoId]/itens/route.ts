@@ -1,9 +1,10 @@
 // app/api/obras/[id]/grupos/[grupoId]/itens/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { mapearComposicaoParaItem } from '@/lib/composicoes/calculos'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
+import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
 
 export async function POST(
   request: NextRequest,
@@ -54,7 +55,7 @@ export async function POST(
       (maoObraRes.data ?? []).map(m => ({ horas: m.horas, custo_hora: m.custo_hora }))
     )
 
-    const { data, error } = await supabase
+    const { data: inserido, error } = await supabase
       .from('itens_orcamento')
       .insert({
         grupo_id,
@@ -70,10 +71,14 @@ export async function POST(
         composicao_id: composicaoRes.data.id,
         composicao_versao: composicaoRes.data.versao,
       })
-      .select('*, unidades_medida(*)')
+      .select('id')
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error || !inserido) return NextResponse.json({ error: error?.message ?? 'Falha ao inserir item' }, { status: 500 })
+
+    const admin = await createAdminClient()
+    const { data } = await admin
+      .from('itens_orcamento').select('*, unidades_medida(*)').eq('id', inserido.id).single()
 
     // Log de uso — não bloqueia a criação do item, que já foi commitada com
     // sucesso acima. É telemetria suplementar (histórico "quantas vezes essa
@@ -88,11 +93,11 @@ export async function POST(
       console.error('Falha ao registrar uso da composição:', erroUso.message)
     }
 
-    return NextResponse.json(data, { status: 201 })
+    return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes), { status: 201 })
   }
 
   const bodyGenerico = body as Record<string, unknown>
-  const { data, error } = await supabase
+  const { data: inseridoGenerico, error } = await supabase
     .from('itens_orcamento')
     .insert({
       grupo_id,
@@ -107,9 +112,14 @@ export async function POST(
       observacao: bodyGenerico.observacao ?? null,
       observacao_2: bodyGenerico.observacao_2 ?? null,
     })
-    .select('*, unidades_medida(*)')
+    .select('id')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  if (error || !inseridoGenerico) return NextResponse.json({ error: error?.message ?? 'Falha ao inserir item' }, { status: 500 })
+
+  const admin = await createAdminClient()
+  const { data } = await admin
+    .from('itens_orcamento').select('*, unidades_medida(*)').eq('id', inseridoGenerico.id).single()
+
+  return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes), { status: 201 })
 }

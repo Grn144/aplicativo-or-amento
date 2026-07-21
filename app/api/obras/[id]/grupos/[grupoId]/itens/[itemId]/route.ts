@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
+import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
 
 export async function PUT(
   request: NextRequest,
@@ -58,15 +59,20 @@ export async function PUT(
     return NextResponse.json({ error: 'Nenhum campo enviado' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('itens_orcamento')
     .update(updates)
     .eq('id', itemId)
-    .select('*, unidades_medida(*)')
+    .select('id')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  const admin = await createAdminClient()
+  const { data } = await admin
+    .from('itens_orcamento').select('*, unidades_medida(*)').eq('id', itemId).single()
+
+  return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes))
 }
 
 export async function DELETE(
