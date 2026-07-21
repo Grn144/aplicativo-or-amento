@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       grupos_orcamento (
         itens_orcamento (
           quantidade, custo_unit_mao_obra, custo_unit_material,
-          markup_mao_obra, markup_material, fee_mao_obra, fee_material
+          markup_mao_obra, markup_material
         )
       )
     `)
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
         custo_unit_material: Number(item.custo_unit_material),
         markup_mao_obra: Number(item.markup_mao_obra),
         markup_material: Number(item.markup_material),
-        fee_mao_obra: item.fee_mao_obra === null || item.fee_mao_obra === undefined ? null : Number(item.fee_mao_obra),
-        fee_material: item.fee_material === null || item.fee_material === undefined ? null : Number(item.fee_material),
+        fee_mao_obra: null,
+        fee_material: null,
       } as ItemOrcamento, 1.02)
       return soma + calc.total_venda
     }, 0)
