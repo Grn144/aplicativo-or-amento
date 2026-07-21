@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
-import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
+import { calcularItem } from '@/lib/calculos'
+import type { ItemOrcamento } from '@/types/database'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -14,7 +15,11 @@ export async function GET(request: NextRequest) {
   const buscaSanitizada = busca.replace(/[(),]/g, '')
   const status = searchParams.get('status') ?? ''
 
-  let query = supabase
+  // Leitura de custos via service_role: as colunas de custo/markup foram
+  // revogadas do papel authenticated (migration 016). O total de VENDA é
+  // derivado no servidor e é o único valor financeiro que vai ao navegador.
+  const admin = await createAdminClient()
+  let query = admin
     .from('obras')
     .select(`
       id, codigo, nome, status, data_orcamento, criado_em, atualizado_em,
@@ -22,7 +27,7 @@ export async function GET(request: NextRequest) {
       grupos_orcamento (
         itens_orcamento (
           quantidade, custo_unit_mao_obra, custo_unit_material,
-          markup_mao_obra, markup_material
+          markup_mao_obra, markup_material, fee_mao_obra, fee_material
         )
       )
     `)
@@ -37,10 +42,29 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
-  if (!usuario) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
+  // Calcula o total de venda por obra no servidor e devolve só o derivado —
+  // custos crus nunca saem daqui. fee_fator não é lido na listagem, então usa-se
+  // o padrão 1.02 (mesmo comportamento do cálculo de total da listagem antiga).
+  const obras = (data ?? []).map(obra => {
+    const itens = (obra.grupos_orcamento ?? []).flatMap(g => g.itens_orcamento ?? [])
+    const total_venda = itens.reduce((soma, item) => {
+      const calc = calcularItem({
+        quantidade: Number(item.quantidade),
+        custo_unit_mao_obra: Number(item.custo_unit_mao_obra),
+        custo_unit_material: Number(item.custo_unit_material),
+        markup_mao_obra: Number(item.markup_mao_obra),
+        markup_material: Number(item.markup_material),
+        fee_mao_obra: item.fee_mao_obra === null || item.fee_mao_obra === undefined ? null : Number(item.fee_mao_obra),
+        fee_material: item.fee_material === null || item.fee_material === undefined ? null : Number(item.fee_material),
+      } as ItemOrcamento, 1.02)
+      return soma + calc.total_venda
+    }, 0)
 
-  return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes))
+    const { grupos_orcamento: _descartado, ...semItens } = obra
+    return { ...semItens, total_venda }
+  })
+
+  return NextResponse.json(obras)
 }
 
 export async function POST(request: NextRequest) {
