@@ -17,10 +17,10 @@ export async function obterUsuarioComPermissoes(
   userId: string
 ): Promise<UsuarioComPermissoes | null> {
   const [{ data: usuario }, { data: overrides }] = await Promise.all([
-    supabase.from('usuarios').select('id, nome, papel').eq('id', userId).single(),
+    supabase.from('usuarios').select('id, nome, papel, ativo').eq('id', userId).single(),
     supabase.from('usuario_permissoes').select('permissao, concedida').eq('usuario_id', userId),
   ])
-  if (!usuario) return null
+  if (!usuario || !usuario.ativo) return null
 
   return {
     id: usuario.id,

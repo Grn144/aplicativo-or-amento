@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { obterUsuarioComPermissoes, requireRole, requirePermission } from './servidor'
 
-function supabaseMock(usuario: { id: string; nome: string; papel: string } | null, overrides: { permissao: string; concedida: boolean }[]) {
+function supabaseMock(usuario: { id: string; nome: string; papel: string; ativo: boolean } | null, overrides: { permissao: string; concedida: boolean }[]) {
   return {
     from(tabela: string) {
       if (tabela === 'usuarios') {
@@ -24,7 +24,7 @@ describe('obterUsuarioComPermissoes', () => {
 
   it('retorna usuário com permissões calculadas a partir do perfil', async () => {
     const resultado = await obterUsuarioComPermissoes(
-      supabaseMock({ id: 'user-1', nome: 'Ana', papel: 'comercial' }, []),
+      supabaseMock({ id: 'user-1', nome: 'Ana', papel: 'comercial', ativo: true }, []),
       'user-1'
     )
     expect(resultado?.papel).toBe('comercial')
@@ -35,12 +35,20 @@ describe('obterUsuarioComPermissoes', () => {
   it('aplica overrides individuais sobre o perfil', async () => {
     const resultado = await obterUsuarioComPermissoes(
       supabaseMock(
-        { id: 'user-1', nome: 'Ana', papel: 'comercial' },
+        { id: 'user-1', nome: 'Ana', papel: 'comercial', ativo: true },
         [{ permissao: 'visualizar_custos', concedida: true }]
       ),
       'user-1'
     )
     expect(resultado?.permissoes.has('visualizar_custos')).toBe(true)
+  })
+
+  it('retorna null quando o usuário está desativado', async () => {
+    const resultado = await obterUsuarioComPermissoes(
+      supabaseMock({ id: 'user-1', nome: 'Ana', papel: 'comercial', ativo: false }, []),
+      'user-1'
+    )
+    expect(resultado).toBeNull()
   })
 })
 
