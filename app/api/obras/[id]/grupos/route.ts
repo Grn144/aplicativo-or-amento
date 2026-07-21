@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
+import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
 
 export async function POST(
   request: NextRequest,
@@ -51,12 +52,20 @@ export async function POST(
   const ordem = (count ?? 0) + 1
   const letra = String.fromCharCode(64 + ordem)  // 1→A, 2→B, ...
 
-  const { data, error } = await supabase
+  const { data: grupoInserido, error } = await supabase
     .from('grupos_orcamento')
     .insert({ obra_id, disciplina_id, letra, ordem })
-    .select('*, disciplinas(*), itens_orcamento(*, unidades_medida(*))')
+    .select('id')
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  if (error || !grupoInserido) return NextResponse.json({ error: error?.message ?? 'Falha ao criar grupo' }, { status: 500 })
+
+  const admin = await createAdminClient()
+  const { data } = await admin
+    .from('grupos_orcamento')
+    .select('*, disciplinas(*), itens_orcamento(*, unidades_medida(*))')
+    .eq('id', grupoInserido.id)
+    .single()
+
+  return NextResponse.json(mascararCamposFinanceiros(data, usuario.permissoes), { status: 201 })
 }

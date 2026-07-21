@@ -87,7 +87,7 @@ export async function inserirConteudoObra(
     // 3. Itens: numeração sequencial a partir do que já existe no grupo
     const { count: itensExistentes } = await supabase
       .from('itens_orcamento')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('grupo_id', grupoIdFinal)
     let numero = (itensExistentes ?? 0)
 

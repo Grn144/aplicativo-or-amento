@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import { parsePlanilhaObra, resolverCelula, type Celula } from '@/lib/excel/parse-obra'
 import { inserirConteudoObra } from '@/lib/excel/importar-obra'
+import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
 import ExcelJS from 'exceljs'
 
 // Importa uma planilha inteira da obra: cada linha de disciplina vira um grupo
@@ -65,14 +66,15 @@ export async function POST(
   }
 
   // Retorna a estrutura completa e atualizada da obra para o editor recarregar
-  const { data: grupos } = await supabase
+  const admin = await createAdminClient()
+  const { data: grupos } = await admin
     .from('grupos_orcamento')
     .select('*, disciplinas(*), itens_orcamento(*, unidades_medida(*))')
     .eq('obra_id', obra_id)
     .order('ordem')
 
   return NextResponse.json(
-    { grupos: grupos ?? [], disciplinas: resultado.disciplinas, itens: resultado.itens },
+    { grupos: mascararCamposFinanceiros(grupos ?? [], usuario.permissoes), disciplinas: resultado.disciplinas, itens: resultado.itens },
     { status: 201 }
   )
 }
