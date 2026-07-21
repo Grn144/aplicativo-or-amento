@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { intervaloDoPeriodo, parsePeriodo, PERIODO_LABELS } from '@/lib/dashboard/periodo'
 import { calcularDashboard, STATUS_LABELS, type ObraDashboard } from '@/lib/dashboard/metricas'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
@@ -15,10 +15,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Sem permissão para exportar indicadores' }, { status: 403 })
   }
 
+  const admin = await createAdminClient()
+
   const periodo = parsePeriodo(request.nextUrl.searchParams.get('periodo') ?? undefined)
   const intervalo = intervaloDoPeriodo(periodo)
 
-  const { data: obras, error } = await supabase.from('obras').select(`
+  const { data: obras, error } = await admin.from('obras').select(`
     id, codigo, nome, status, data_orcamento, criado_em,
     clientes ( id, razao_social ),
     usuarios ( nome ),

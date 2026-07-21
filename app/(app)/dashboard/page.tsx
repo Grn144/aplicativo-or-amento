@@ -1,5 +1,5 @@
 import { Banknote, CheckCircle2, Clock, FileText, Wallet, XCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { fmt, fmtPct } from '@/lib/format'
 import { intervaloDoPeriodo, parsePeriodo } from '@/lib/dashboard/periodo'
 import { calcularDashboard, type ObraDashboard } from '@/lib/dashboard/metricas'
@@ -27,7 +27,9 @@ export default async function DashboardPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  let obrasQuery = supabase.from('obras').select(`
+  const admin = await createAdminClient()
+
+  let obrasQuery = admin.from('obras').select(`
       id, codigo, nome, status, data_orcamento, criado_em,
       clientes ( id, razao_social ),
       usuarios ( nome ),
