@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Trash2 } from 'lucide-react'
-import { calcularItem } from '@/lib/calculos'
 import { fmt } from '@/lib/format'
 import type { StatusObra } from '@/types/database'
 
@@ -43,35 +42,10 @@ type ObraItem = {
   status: StatusObra
   data_orcamento: string | null
   clientes: { id: string; razao_social: string } | null
-  grupos_orcamento: {
-    itens_orcamento: {
-      quantidade: number
-      custo_unit_mao_obra: number
-      custo_unit_material: number
-      markup_mao_obra: number
-      markup_material: number
-    }[]
-  }[]
+  total_venda: number
 }
 
 type Cliente = { id: string; razao_social: string }
-
-function calcularTotalVendaObra(obra: ObraItem): number {
-  return obra.grupos_orcamento.flatMap(g => g.itens_orcamento).reduce((sum, item) => {
-    const calc = calcularItem({
-      id: '', grupo_id: '', numero: 0, descricao: '', local: null,
-      unidade_id: null, observacao: null, observacao_2: null, ordem: 0,
-      fee_mao_obra: null, fee_material: null,
-      composicao_id: null, composicao_versao: null,
-      quantidade: item.quantidade,
-      custo_unit_mao_obra: item.custo_unit_mao_obra,
-      custo_unit_material: item.custo_unit_material,
-      markup_mao_obra: item.markup_mao_obra,
-      markup_material: item.markup_material,
-    }, 1.02)
-    return sum + calc.total_venda
-  }, 0)
-}
 
 export default function ObrasPage() {
   const router = useRouter()
@@ -275,7 +249,7 @@ export default function ObrasPage() {
                       : '—'}
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
-                    R$ {fmt(calcularTotalVendaObra(obra))}
+                    R$ {fmt(obra.total_venda)}
                   </td>
                   {ehAdmin && (
                     <td className="px-4 py-3 text-center">
