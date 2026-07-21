@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { lerJson } from '@/lib/http'
 import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import { mascararCamposFinanceiros } from '@/lib/permissoes/mascarar'
@@ -14,7 +14,8 @@ export async function GET(
 
   const { id } = await params
 
-  const { data, error } = await supabase
+  const admin = await createAdminClient()
+  const { data, error } = await admin
     .from('obras')
     .select(`
       *,
