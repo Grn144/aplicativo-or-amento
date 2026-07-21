@@ -1,5 +1,6 @@
-import { notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { notFound, redirect } from 'next/navigation'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { obterUsuarioComPermissoes, requirePermission } from '@/lib/permissoes/servidor'
 import EditorOrcamento from '@/components/orcamento/EditorOrcamento'
 import { calcularEstatisticasHistoricas, type EstatisticaComposicao } from '@/lib/orcamento/alertas'
 
@@ -52,9 +53,20 @@ export default async function ObraPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const usuario = await obterUsuarioComPermissoes(supabase, user.id)
+  if (!usuario || !requirePermission(usuario.permissoes, 'visualizar_custos')) {
+    // O editor é uma ferramenta de custo; quem não pode ver custos não entra.
+    // (Comercial exporta a planilha comercial pela listagem de obras — Task 10.)
+    redirect('/obras')
+  }
+
+  const admin = await createAdminClient()
 
   const [obraResult, clientesResult, disciplinasResult, unidadesResult] = await Promise.all([
-    supabase
+    admin
       .from('obras')
       .select(`
         id, codigo, nome, status, data_orcamento,
@@ -105,7 +117,7 @@ export default async function ObraPage({
 
   let estatisticasHistoricas: Record<string, EstatisticaComposicao> = {}
   if (composicaoIds.length > 0) {
-    const { data: itensHistorico } = await supabase
+    const { data: itensHistorico } = await admin
       .from('itens_orcamento')
       .select('composicao_id, custo_unit_material, custo_unit_mao_obra, markup_material, markup_mao_obra, quantidade')
       .in('composicao_id', composicaoIds)
