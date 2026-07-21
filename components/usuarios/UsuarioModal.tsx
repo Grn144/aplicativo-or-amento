@@ -208,7 +208,7 @@ export default function UsuarioModal({ aberto, onOpenChange, usuarioId, podeAlte
           <Tabs defaultValue="dados-gerais">
             <TabsList>
               <TabsTab value="dados-gerais">Dados Gerais</TabsTab>
-              <TabsTab value="permissoes" disabled={!podeAlterarPermissoes}>Permissões</TabsTab>
+              <TabsTab value="permissoes" disabled={!podeAlterarPermissoes || !editando}>Permissões</TabsTab>
             </TabsList>
 
             <TabsPanel value="dados-gerais">
