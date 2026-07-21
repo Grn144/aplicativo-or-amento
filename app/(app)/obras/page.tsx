@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { NativeSelect } from '@/components/ui/native-select'
-import { Trash2 } from 'lucide-react'
+import { Trash2, FileDown } from 'lucide-react'
 import { fmt } from '@/lib/format'
 import type { StatusObra } from '@/types/database'
 
@@ -60,6 +60,7 @@ export default function ObrasPage() {
   const [erro, setErro] = useState('')
   const [importando, setImportando] = useState(false)
   const [ehAdmin, setEhAdmin] = useState(false)
+  const [permissoes, setPermissoes] = useState<Set<string>>(new Set())
   const [excluindo, setExcluindo] = useState<ObraItem | null>(null)
   const [removendo, setRemovendo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -71,7 +72,10 @@ export default function ObrasPage() {
     // Descobre o papel do usuário para exibir ações de administrador
     fetch('/api/usuarios/me')
       .then(r => (r.ok ? r.json() : null))
-      .then(u => setEhAdmin(u?.papel === 'admin'))
+      .then(u => {
+        setEhAdmin(u?.papel === 'admin')
+        setPermissoes(new Set(u?.permissoes ?? []))
+      })
       .catch(() => {})
     // roda uma única vez na montagem
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,6 +93,11 @@ export default function ObrasPage() {
     }
     setObras(prev => prev.filter(o => o.id !== excluindo.id))
     setExcluindo(null)
+  }
+
+  function exportarComercial(e: React.MouseEvent, obra: ObraItem) {
+    e.stopPropagation()
+    window.location.href = `/api/obras/${obra.id}/export?tipo=comercial`
   }
 
   const carregarObras = useCallback(async () => {
@@ -225,7 +234,9 @@ export default function ObrasPage() {
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Data</th>
                 <th className="px-4 py-3 font-medium text-right">Total Venda</th>
-                {ehAdmin && <th className="px-4 py-3 font-medium text-center w-16">Ações</th>}
+                {(ehAdmin || permissoes.has('exportar_planilhas')) && (
+                  <th className="px-4 py-3 font-medium text-center w-28">Ações</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -251,17 +262,32 @@ export default function ObrasPage() {
                   <td className="px-4 py-3 text-right font-mono">
                     R$ {fmt(obra.total_venda)}
                   </td>
-                  {ehAdmin && (
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        type="button"
-                        aria-label={`Excluir orçamento ${obra.codigo}`}
-                        title="Excluir orçamento"
-                        onClick={e => { e.stopPropagation(); setExcluindo(obra) }}
-                        className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
+                  {(ehAdmin || permissoes.has('exportar_planilhas')) && (
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center gap-1">
+                        {permissoes.has('exportar_planilhas') && (
+                          <button
+                            type="button"
+                            aria-label={`Exportar planilha comercial de ${obra.codigo}`}
+                            title="Exportar comercial"
+                            onClick={e => exportarComercial(e, obra)}
+                            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          >
+                            <FileDown className="size-4" />
+                          </button>
+                        )}
+                        {ehAdmin && (
+                          <button
+                            type="button"
+                            aria-label={`Excluir orçamento ${obra.codigo}`}
+                            title="Excluir orçamento"
+                            onClick={e => { e.stopPropagation(); setExcluindo(obra) }}
+                            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-600"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>
