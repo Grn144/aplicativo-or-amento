@@ -19,6 +19,15 @@ describe('mascararCamposFinanceiros', () => {
     expect(resultado).toEqual({ custo_unit_mao_obra: 100, custo_unit_material: 50 })
   })
 
+  it('sem visualizar_custos, remove também os fatores de fee/comissão/imposto', () => {
+    const obra = {
+      codigo: 'OB-1', fee_fator: 1.02, comissao_valor: 500, imposto_valor: 300,
+      fee_mao_obra: 1.05, fee_material: 1.0, quantidade: 2,
+    }
+    const resultado = mascararCamposFinanceiros(obra, permissoes())
+    expect(resultado).toEqual({ codigo: 'OB-1', quantidade: 2 })
+  })
+
   it('sem visualizar_margem, remove markup e percentuais de margem', () => {
     const item = { markup_mao_obra: 1.3, markup_material: 1.2, margem_efetiva_pct: 0.25, descricao: 'Item' }
     const resultado = mascararCamposFinanceiros(item, permissoes('visualizar_custos'))

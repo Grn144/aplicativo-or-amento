@@ -6,6 +6,10 @@ const CAMPOS_CUSTO = [
   'subtotal_mao_obra_custo', 'subtotal_material_custo',
   'total_custo', 'total_mao_obra_custo', 'total_material_custo',
   'custo_direto', 'custo_total', 'custo_com_fee',
+  // Fatores de FEE/comissão/imposto: internos ao cálculo de custo/venda, tão
+  // sensíveis quanto os custos crus — gateados por visualizar_custos. Sem estes,
+  // endpoints lidos via admin (ex.: GET /api/obras/[id]) vazariam esses valores.
+  'fee_mao_obra', 'fee_material', 'fee_fator', 'comissao_valor', 'imposto_valor',
 ] as const
 
 const CAMPOS_MARGEM = [

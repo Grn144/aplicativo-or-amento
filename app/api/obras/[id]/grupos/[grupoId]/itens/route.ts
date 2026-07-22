@@ -26,7 +26,7 @@ export async function POST(
   // Próximo número e ordem
   const { count } = await supabase
     .from('itens_orcamento')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('grupo_id', grupo_id)
 
   const numero = (count ?? 0) + 1
